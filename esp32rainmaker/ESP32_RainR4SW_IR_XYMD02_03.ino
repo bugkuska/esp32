@@ -19,6 +19,8 @@
     Install the following libraries :
     1. ezButton
     2. IRremote
+    3. Modbus-Master
+    4. SimpleTimer
  ***********************************************************************************************/
 //===========Modbus Object=========//
 #include <ModbusMaster.h>
