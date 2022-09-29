@@ -6,7 +6,7 @@
     YouTube Video: https://youtu.be/inVhQaKLdlk
     My Channel: https://www.youtube.com/channel/UCOXYfOHgu-C-UfGyDcu5sYw/
 
-    Update Read Modbus Temperature and Humidity 
+    Update Read Modbus Temperature and Humidity
     Created By: Sompoch Tongnamtiang
     Created On: 20 Sep, 2022
     Facebook : https://www.facebook.com/smfthailand
@@ -30,6 +30,7 @@ ModbusMaster node1;           //XY-MD02
 #define DEFAULT_Temperature 0
 #define DEFAULT_Humidity 0
 //===========Modbus Object=========//
+
 //==========Simple Timer===========//
 #include <SimpleTimer.h>
 SimpleTimer timer;
@@ -60,17 +61,17 @@ char device3[] = "Switch3";
 char device4[] = "Switch4";
 //---------------------------------------------------
 // define the GPIO connected with Relays and switches
-static uint8_t RELAY_1 = 25;  
-static uint8_t RELAY_2 = 26;  
-static uint8_t RELAY_3 = 33;  
-static uint8_t RELAY_4 = 32;  
+static uint8_t RELAY_1 = 25;
+static uint8_t RELAY_2 = 26;
+static uint8_t RELAY_3 = 33;
+static uint8_t RELAY_4 = 32;
 //---------------------------------------------------
 ezButton button1(34);
 ezButton button2(35);
 ezButton button3(36);
 ezButton button4(39);
 //---------------------------------------------------
-static uint8_t WIFI_LED    = 2;   
+static uint8_t WIFI_LED    = 2;
 static uint8_t gpio_reset = 0;
 //---------------------------------------------------
 // Relay State
@@ -127,8 +128,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
       STATE_RELAY_1 = val.val.b;
       STATE_RELAY_1 = !STATE_RELAY_1;
       control_relay(1, RELAY_1, STATE_RELAY_1);
-      //(STATE_RELAY_1 == false) ? digitalWrite(RELAY_1, HIGH) : digitalWrite(RELAY_1, LOW);
-      //param->updateAndReport(val);
+      (STATE_RELAY_1 == false) ? digitalWrite(RELAY_1, LOW) : digitalWrite(RELAY_1, HIGH);
+      param->updateAndReport(val);
     }
   }
   //----------------------------------------------------------------------------------
@@ -141,8 +142,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
       STATE_RELAY_2 = val.val.b;
       STATE_RELAY_2 = !STATE_RELAY_2;
       control_relay(2, RELAY_2, STATE_RELAY_2);
-      //(STATE_RELAY_2 == false) ? digitalWrite(RELAY_2, HIGH) : digitalWrite(RELAY_2, LOW);
-      //param->updateAndReport(val);
+      (STATE_RELAY_2 == false) ? digitalWrite(RELAY_2, LOW) : digitalWrite(RELAY_2, HIGH);
+      param->updateAndReport(val);
     }
   }
   //----------------------------------------------------------------------------------
@@ -155,10 +156,9 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
       STATE_RELAY_3 = val.val.b;
       STATE_RELAY_3 = !STATE_RELAY_3;
       control_relay(3, RELAY_3, STATE_RELAY_3);
-      //(STATE_RELAY_3 == false) ? digitalWrite(RELAY_3, HIGH) : digitalWrite(RELAY_3, LOW);
-      //param->updateAndReport(val);
+      (STATE_RELAY_3 == false) ? digitalWrite(RELAY_3, LOW) : digitalWrite(RELAY_3, HIGH);
+      param->updateAndReport(val);
     }
-
   }
   //----------------------------------------------------------------------------------
   else if (strcmp(device_name, device4) == 0) {
@@ -170,8 +170,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
       STATE_RELAY_4 = val.val.b;
       STATE_RELAY_4 = !STATE_RELAY_4;
       control_relay(4, RELAY_4, STATE_RELAY_4);
-      //(STATE_RELAY_4 == false) ? digitalWrite(RELAY_4, HIGH) : digitalWrite(RELAY_4, LOW);
-      //param->updateAndReport(val);
+      (STATE_RELAY_4 == false) ? digitalWrite(RELAY_4, LOW) : digitalWrite(RELAY_4, HIGH);
+      param->updateAndReport(val);
     }
   }
   //----------------------------------------------------------------------------------
@@ -192,6 +192,7 @@ void setup() {
   //------------------------------------------------------------------------------
   IrReceiver.begin(IR_RECEIVE_PIN); // Start the IR receiver
   //------------------------------------------------------------------------------
+
   // Set the Relays GPIOs as output mode
   pinMode(RELAY_1, OUTPUT);
   pinMode(RELAY_2, OUTPUT);
@@ -345,7 +346,7 @@ void loop()
   }
   //------------------------------------------------------------------------------
   button_control();
-  remote_control();
+  remoteir_control();
 }
 
 /*******************************************************************************
@@ -389,7 +390,7 @@ void control_relay(int relay_no, int relay_pin, boolean &status) {
 /****************************************************************************************************
    remote_control Function
 *****************************************************************************************************/
-void remote_control()
+void remoteir_control()
 {
   if (IrReceiver.decode()) {
     String ir_code = String(IrReceiver.decodedIRData.command, HEX);
@@ -399,7 +400,7 @@ void remote_control()
     }
 
     Serial.println(ir_code);
-//Chang IR code value & Generate from ir-code.ino
+    //Chang IR code value & Generate from ir-code.ino
     if (ir_code == "16") {
       control_relay(1, RELAY_1, STATE_RELAY_1);
       my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_1);
