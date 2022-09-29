@@ -24,22 +24,14 @@
     4. DHT_sensor_library
     5. SimpleTimer
  ***********************************************************************************************/
-//DHT11
+//=============DHT11===============//
 #include <DHT.h>
 #define DHTPIN 5
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 #define DEFAULT_Temperature 0
 #define DEFAULT_Humidity 0
-
-//===========Modbus Object=========//
-//#include <ModbusMaster.h>
-//#define RX2             16    //RO
-//#define TX2             17    //DI
-//ModbusMaster node1;           //XY-MD02
-//#define DEFAULT_Temperature 0
-//#define DEFAULT_Humidity 0
-//===========Modbus Object=========//
+//=============DHT11===============//
 
 //==========Simple Timer===========//
 #include <SimpleTimer.h>
@@ -90,8 +82,8 @@ bool STATE_RELAY_2 = LOW;
 bool STATE_RELAY_3 = LOW;
 bool STATE_RELAY_4 = LOW;
 //---------------------------------------------------
-static TemperatureSensor temperature1("XY-MD02 อุณหภูมิ");
-static TemperatureSensor humidity1("XY-MD02 ความชื้นสัมพัทธ์");
+static TemperatureSensor temperature1("DHT11 อุณหภูมิ");
+static TemperatureSensor humidity1("DHT11 ความชื้นสัมพัทธ์");
 //The framework provides some standard device types
 //like switch, lightbulb, fan, temperature sensor.
 static Switch my_switch1(device1, &RELAY_1);
@@ -138,8 +130,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
       STATE_RELAY_1 = val.val.b;
       STATE_RELAY_1 = !STATE_RELAY_1;
       control_relay(1, RELAY_1, STATE_RELAY_1);
-      //(STATE_RELAY_1 == false) ? digitalWrite(RELAY_1, HIGH) : digitalWrite(RELAY_1, LOW);
-      //param->updateAndReport(val);
+      (STATE_RELAY_1 == false) ? digitalWrite(RELAY_1, LOW) : digitalWrite(RELAY_1, HIGH);
+      param->updateAndReport(val);
     }
   }
   //----------------------------------------------------------------------------------
@@ -152,8 +144,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
       STATE_RELAY_2 = val.val.b;
       STATE_RELAY_2 = !STATE_RELAY_2;
       control_relay(2, RELAY_2, STATE_RELAY_2);
-      //(STATE_RELAY_2 == false) ? digitalWrite(RELAY_2, HIGH) : digitalWrite(RELAY_2, LOW);
-      //param->updateAndReport(val);
+      (STATE_RELAY_2 == false) ? digitalWrite(RELAY_2, LOW) : digitalWrite(RELAY_2, HIGH);
+      param->updateAndReport(val);
     }
   }
   //----------------------------------------------------------------------------------
@@ -166,8 +158,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
       STATE_RELAY_3 = val.val.b;
       STATE_RELAY_3 = !STATE_RELAY_3;
       control_relay(3, RELAY_3, STATE_RELAY_3);
-      //(STATE_RELAY_3 == false) ? digitalWrite(RELAY_3, HIGH) : digitalWrite(RELAY_3, LOW);
-      //param->updateAndReport(val);
+      (STATE_RELAY_3 == false) ? digitalWrite(RELAY_3, LOW) : digitalWrite(RELAY_3, HIGH);
+      param->updateAndReport(val);
     }
 
   }
@@ -181,8 +173,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
       STATE_RELAY_4 = val.val.b;
       STATE_RELAY_4 = !STATE_RELAY_4;
       control_relay(4, RELAY_4, STATE_RELAY_4);
-      //(STATE_RELAY_4 == false) ? digitalWrite(RELAY_4, HIGH) : digitalWrite(RELAY_4, LOW);
-      //param->updateAndReport(val);
+      (STATE_RELAY_4 == false) ? digitalWrite(RELAY_4, LOW) : digitalWrite(RELAY_4, HIGH);
+      param->updateAndReport(val);
     }
   }
   //----------------------------------------------------------------------------------
@@ -230,7 +222,7 @@ void setup() {
   digitalWrite(RELAY_4, !STATE_RELAY_4);
   //------------------------------------------------------------------------------
   Node my_node;
-  my_node = RMaker.initNode("xESP32R4SW_IR_XYMD02x");
+  my_node = RMaker.initNode("xESP32R4SW_IR_DHT11");
   //------------------------------------------------------------------------------
   //Standard switch device
   my_switch1.addCb(write_callback);
@@ -298,7 +290,7 @@ void setup() {
   //------------------------------------------------------------------------------
 }
 
-//DHT11
+//===============DHT11===============//
 void dhtSensorData(){
   float humi1 = dht.readHumidity();
   float temp1 = dht.readTemperature(); // or dht.readTemperature(true) for Fahrenheit
@@ -310,27 +302,8 @@ void dhtSensorData(){
     humidity1.updateAndReportParam("Temperature", humi1);
 }
 
-//========Read Sensor Data=========//
-/*void Send_Sensor()
-{
-  uint8_t result1;
-  float temp1 = (node1.getResponseBuffer(0) / 10.0f);
-  float humi1 = (node1.getResponseBuffer(1) / 10.0f);
-  Serial.println("Get XY-MD02 Data:");
-  result1 = node1.readInputRegisters(0x0001, 2); //Function 04, Read 2 registers starting at 2)
-  if (result1 == node1.ku8MBSuccess)
-  {
-    Serial.print("Temp: ");
-    Serial.println(node1.getResponseBuffer(0) / 10.0f);
-    Serial.print("Humi: ");
-    Serial.println(node1.getResponseBuffer(1) / 10.0f);
+//===============DHT11===============//
 
-    temperature1.updateAndReportParam("Temperature", temp1);
-    humidity1.updateAndReportParam("Temperature", humi1);
-  }
-}*/
-
-//========Read Sensor Data=========//
 /****************************************************************************************************
    loop Function
 *****************************************************************************************************/
