@@ -14,8 +14,6 @@
  *  1. ezButton
  *  2. IRremote
  ***********************************************************************************************/
-
-
 #include "RMaker.h"
 #include "WiFi.h"
 #include "WiFiProv.h"
@@ -104,8 +102,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
         STATE_RELAY_1 = val.val.b;
         STATE_RELAY_1 = !STATE_RELAY_1;
         control_relay(1, RELAY_1, STATE_RELAY_1);
-        //(STATE_RELAY_1 == false) ? digitalWrite(RELAY_1, HIGH) : digitalWrite(RELAY_1, LOW);
-        //param->updateAndReport(val);
+        (STATE_RELAY_1 == false) ? digitalWrite(RELAY_1, LOW) : digitalWrite(RELAY_1, HIGH);
+        param->updateAndReport(val);
       }
     }
     //----------------------------------------------------------------------------------
@@ -118,8 +116,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
         STATE_RELAY_2 = val.val.b;
         STATE_RELAY_2 = !STATE_RELAY_2;
         control_relay(2, RELAY_2, STATE_RELAY_2);
-        //(STATE_RELAY_2 == false) ? digitalWrite(RELAY_2, HIGH) : digitalWrite(RELAY_2, LOW);
-        //param->updateAndReport(val);
+        (STATE_RELAY_2 == false) ? digitalWrite(RELAY_2, LOW) : digitalWrite(RELAY_2, HIGH);
+        param->updateAndReport(val);
       }
     }
     //----------------------------------------------------------------------------------
@@ -132,8 +130,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
         STATE_RELAY_3 = val.val.b;
         STATE_RELAY_3 = !STATE_RELAY_3;
         control_relay(3, RELAY_3, STATE_RELAY_3);        
-        //(STATE_RELAY_3 == false) ? digitalWrite(RELAY_3, HIGH) : digitalWrite(RELAY_3, LOW);
-        //param->updateAndReport(val);
+        (STATE_RELAY_3 == false) ? digitalWrite(RELAY_3, LOW) : digitalWrite(RELAY_3, HIGH);
+        param->updateAndReport(val);
       }
   
     }
@@ -147,8 +145,8 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
         STATE_RELAY_4 = val.val.b;
         STATE_RELAY_4 = !STATE_RELAY_4;
         control_relay(4, RELAY_4, STATE_RELAY_4);
-        //(STATE_RELAY_4 == false) ? digitalWrite(RELAY_4, HIGH) : digitalWrite(RELAY_4, LOW);
-        //param->updateAndReport(val);
+        (STATE_RELAY_4 == false) ? digitalWrite(RELAY_4, LOW) : digitalWrite(RELAY_4, HIGH);
+        param->updateAndReport(val);
       } 
     }
     //---------------------------------------------------------------------------------- 
