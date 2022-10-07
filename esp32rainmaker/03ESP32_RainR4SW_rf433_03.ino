@@ -70,7 +70,7 @@ ezButton button4(39);
 //=========GPIO Manual SW==========//
 
 //=======Wi-Fi & gpio reset========//
-static uint8_t WIFI_LED    = 2;
+static uint8_t WIFI_LED = 2;
 static uint8_t gpio_reset = 0;
 //=======Wi-Fi & gpio reset========//
 
@@ -93,8 +93,7 @@ static Switch my_switch4(device4, &RELAY_4);
 /*********************************
    sysProvEvent Function
 *********************************/
-void sysProvEvent(arduino_event_t *sys_event)
-{
+void sysProvEvent(arduino_event_t *sys_event) {
   switch (sys_event->event_id) {
     case ARDUINO_EVENT_PROV_START:
 #if CONFIG_IDF_TARGET_ESP32
@@ -115,8 +114,7 @@ void sysProvEvent(arduino_event_t *sys_event)
 /*************************************
    write_callback Function
 *************************************/
-void write_callback(Device *device, Param *param, const param_val_t val, void *priv_data, write_ctx_t *ctx)
-{
+void write_callback(Device *device, Param *param, const param_val_t val, void *priv_data, write_ctx_t *ctx) {
   const char *device_name = device->getDeviceName();
   const char *param_name = param->getParamName();
   //----------------------------------------------------------------------------------
@@ -259,6 +257,8 @@ void setup() {
   // Timer for Sending Sensor's Data
   //timer.setInterval(10000L, dhtSensorData);
 
+  WiFi.onEvent(WiFiEvent);
+
   WiFi.onEvent(sysProvEvent);
 #if CONFIG_IDF_TARGET_ESP32
   WiFiProv.beginProvision(WIFI_PROV_SCHEME_BLE, WIFI_PROV_SCHEME_HANDLER_FREE_BTDM, WIFI_PROV_SECURITY_1, pop, service_name);
@@ -288,14 +288,26 @@ void setup() {
   //------------------------------------------------------------------------------
 }
 
+//======Check connect to wifi======//
+void WiFiEvent(WiFiEvent_t event, arduino_event_info_t info) {
+  switch (event) {
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+      Serial.println("Disconnected from station, attempting reconnection");
+      WiFi.reconnect();
+      break;
+    default:
+      break;
+  }
+}
+//======Check connect to wifi======//
+
 /**********************************
    loop Function
 **********************************/
-void loop()
-{
+void loop() {
   //------------------------------------------------------------------------------
   // Read GPIO0 (external button to reset device
-  if (digitalRead(gpio_reset) == LOW) { //Push button pressed
+  if (digitalRead(gpio_reset) == LOW) {  //Push button pressed
     Serial.printf("Reset Button Pressed!\n");
     // Key debounce handling
     delay(100);
@@ -322,8 +334,7 @@ void loop()
   if (WiFi.status() != WL_CONNECTED) {
     //Serial.println("WiFi Not Connected");
     digitalWrite(WIFI_LED, LOW);
-  }
-  else {
+  } else {
     //Serial.println("WiFi Connected");
     digitalWrite(WIFI_LED, HIGH);
   }
@@ -377,19 +388,16 @@ void remoterf433_control() {
   if (mySwitch.available()) {
     int value = mySwitch.getReceivedValue();
 
-    if (value == 0xDDADA8) {
+    if (value == 14527912) {
       control_relay(1, RELAY_1, STATE_RELAY_1);
       my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_1);
-    }
-    else if (value == 0xFF5F71) {
+    } else if (value == 16736113) {
       control_relay(2, RELAY_2, STATE_RELAY_2);
       my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_2);
-    }
-    else if (value == 0xFF5F72) {
+    } else if (value == 16736114) {
       control_relay(3, RELAY_3, STATE_RELAY_3);
       my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_3);
-    }
-    else if (value == 0xFF5F78) {
+    } else if (value == 16736120) {
       control_relay(4, RELAY_4, STATE_RELAY_4);
       my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_4);
     }
