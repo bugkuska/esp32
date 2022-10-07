@@ -221,6 +221,9 @@ void setup(){
   Serial.printf("\nStarting ESP-RainMaker\n");
   RMaker.start();
   //------------------------------------------------------------------------------
+  
+  WiFi.onEvent(WiFiEvent);
+ 
   WiFi.onEvent(sysProvEvent);
   #if CONFIG_IDF_TARGET_ESP32
     WiFiProv.beginProvision(WIFI_PROV_SCHEME_BLE, WIFI_PROV_SCHEME_HANDLER_FREE_BTDM, WIFI_PROV_SECURITY_1, pop, service_name);
@@ -249,6 +252,19 @@ void setup(){
   Serial.printf("Relay4 is %s \n", STATE_RELAY_4? "ON" : "OFF");
   //------------------------------------------------------------------------------
 }
+
+//======Check connect to wifi======//
+void WiFiEvent(WiFiEvent_t event, arduino_event_info_t info){
+  switch(event){
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+      Serial.println("Disconnected from station, attempting reconnection");
+      WiFi.reconnect();
+      break;
+    default:
+      break;
+  }
+}
+//======Check connect to wifi======//
 
 /****************************************************************************************************
  * loop Function
