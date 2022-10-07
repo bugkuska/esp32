@@ -26,9 +26,9 @@
  ***********************************************************************************************/
 //===========Modbus Object=========//
 #include <ModbusMaster.h>
-#define RX2             16    //RO
-#define TX2             17    //DI
-ModbusMaster node1;           //XY-MD02
+#define RX2 16       //RO
+#define TX2 17       //DI
+ModbusMaster node1;  //XY-MD02
 #define DEFAULT_Temperature 0
 #define DEFAULT_Humidity 0
 //===========Modbus Object=========//
@@ -78,7 +78,7 @@ ezButton button2(35);
 ezButton button3(36);
 ezButton button4(39);
 //---------------------------------------------------
-static uint8_t WIFI_LED    = 2;
+static uint8_t WIFI_LED = 2;
 static uint8_t gpio_reset = 0;
 //---------------------------------------------------
 // Relay State
@@ -99,8 +99,7 @@ static Switch my_switch4(device4, &RELAY_4);
 /****************************************************************************************************
    sysProvEvent Function
 *****************************************************************************************************/
-void sysProvEvent(arduino_event_t *sys_event)
-{
+void sysProvEvent(arduino_event_t *sys_event) {
   switch (sys_event->event_id) {
     case ARDUINO_EVENT_PROV_START:
 #if CONFIG_IDF_TARGET_ESP32
@@ -121,8 +120,7 @@ void sysProvEvent(arduino_event_t *sys_event)
 /****************************************************************************************************
    write_callback Function
 *****************************************************************************************************/
-void write_callback(Device *device, Param *param, const param_val_t val, void *priv_data, write_ctx_t *ctx)
-{
+void write_callback(Device *device, Param *param, const param_val_t val, void *priv_data, write_ctx_t *ctx) {
   const char *device_name = device->getDeviceName();
   const char *param_name = param->getParamName();
   //----------------------------------------------------------------------------------
@@ -191,13 +189,13 @@ void setup() {
   //------------------------------------------------------------------------------
   uint32_t chipId = 0;
   Serial.begin(9600);
-  Serial2.begin(9600, SERIAL_8N1, RX2, TX2); //RX2=16,RO ,TX2=17, DI
+  Serial2.begin(9600, SERIAL_8N1, RX2, TX2);  //RX2=16,RO ,TX2=17, DI
   node1.begin(1, Serial2);
   //------------------------------------------------------------------------------
   // initialize EEPROM with predefined size
   EEPROM.begin(EEPROM_SIZE);
   //------------------------------------------------------------------------------
-  IrReceiver.begin(IR_RECEIVE_PIN); // Start the IR receiver
+  IrReceiver.begin(IR_RECEIVE_PIN);  // Start the IR receiver
   //------------------------------------------------------------------------------
 
   //RF433 Mhz
@@ -265,6 +263,8 @@ void setup() {
   // Timer for Sending Sensor's Data
   timer.setInterval(10000L, Send_Sensor);
 
+  WiFi.onEvent(WiFiEvent);
+
   WiFi.onEvent(sysProvEvent);
 #if CONFIG_IDF_TARGET_ESP32
   WiFiProv.beginProvision(WIFI_PROV_SCHEME_BLE, WIFI_PROV_SCHEME_HANDLER_FREE_BTDM, WIFI_PROV_SECURITY_1, pop, service_name);
@@ -295,15 +295,13 @@ void setup() {
 }
 
 //========Read Sensor Data=========//
-void Send_Sensor()
-{
+void Send_Sensor() {
   uint8_t result1;
   float temp1 = (node1.getResponseBuffer(0) / 10.0f);
   float humi1 = (node1.getResponseBuffer(1) / 10.0f);
   Serial.println("Get XY-MD02 Data:");
-  result1 = node1.readInputRegisters(0x0001, 2); //Function 04, Read 2 registers starting at 2)
-  if (result1 == node1.ku8MBSuccess)
-  {
+  result1 = node1.readInputRegisters(0x0001, 2);  //Function 04, Read 2 registers starting at 2)
+  if (result1 == node1.ku8MBSuccess) {
     Serial.print("Temp: ");
     Serial.println(node1.getResponseBuffer(0) / 10.0f);
     Serial.print("Humi: ");
@@ -314,15 +312,28 @@ void Send_Sensor()
   }
 }
 //========Read Sensor Data=========//
+
+//======Check connect to wifi======//
+void WiFiEvent(WiFiEvent_t event, arduino_event_info_t info) {
+  switch (event) {
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+      Serial.println("Disconnected from station, attempting reconnection");
+      WiFi.reconnect();
+      break;
+    default:
+      break;
+  }
+}
+//======Check connect to wifi======//
+
 /****************************************************************************************************
    loop Function
 *****************************************************************************************************/
-void loop()
-{
+void loop() {
   timer.run();
   //------------------------------------------------------------------------------
   // Read GPIO0 (external button to reset device
-  if (digitalRead(gpio_reset) == LOW) { //Push button pressed
+  if (digitalRead(gpio_reset) == LOW) {  //Push button pressed
     Serial.printf("Reset Button Pressed!\n");
     // Key debounce handling
     delay(100);
@@ -349,8 +360,7 @@ void loop()
   if (WiFi.status() != WL_CONNECTED) {
     //Serial.println("WiFi Not Connected");
     digitalWrite(WIFI_LED, LOW);
-  }
-  else {
+  } else {
     //Serial.println("WiFi Connected");
     digitalWrite(WIFI_LED, HIGH);
   }
@@ -401,8 +411,7 @@ void control_relay(int relay_no, int relay_pin, boolean &status) {
 /****************************************************************************************************
    remote_control Function
 *****************************************************************************************************/
-void remoteir_control()
-{
+void remoteir_control() {
   if (IrReceiver.decode()) {
     String ir_code = String(IrReceiver.decodedIRData.command, HEX);
     if (ir_code.equals("0")) {
@@ -414,16 +423,13 @@ void remoteir_control()
     if (ir_code == "16") {
       control_relay(1, RELAY_1, STATE_RELAY_1);
       my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_1);
-    }
-    else if (ir_code == "19") {
+    } else if (ir_code == "19") {
       control_relay(2, RELAY_2, STATE_RELAY_2);
       my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_2);
-    }
-    else if (ir_code == "d") {
+    } else if (ir_code == "d") {
       control_relay(3, RELAY_3, STATE_RELAY_3);
       my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_3);
-    }
-    else if (ir_code == "c") {
+    } else if (ir_code == "c") {
       control_relay(4, RELAY_4, STATE_RELAY_4);
       my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_4);
     }
@@ -441,16 +447,13 @@ void remoterf433_control() {
     if (value == 0xDDADA8) {
       control_relay(1, RELAY_1, STATE_RELAY_1);
       my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_1);
-    }
-    else if (value == 0xFF5F71) {
+    } else if (value == 0xFF5F71) {
       control_relay(2, RELAY_2, STATE_RELAY_2);
       my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_2);
-    }
-    else if (value == 0xFF5F72) {
+    } else if (value == 0xFF5F72) {
       control_relay(3, RELAY_3, STATE_RELAY_3);
       my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_3);
-    }
-    else if (value == 0xFF5F78) {
+    } else if (value == 0xFF5F78) {
       control_relay(4, RELAY_4, STATE_RELAY_4);
       my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_4);
     }
