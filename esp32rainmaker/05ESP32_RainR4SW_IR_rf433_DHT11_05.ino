@@ -73,10 +73,10 @@ char device4[] = "Switch4";
 //=====define the Device Names=====//
 
 //======GPIO Connect to Relay======//
-static uint8_t RELAY_1 = 25;  
-static uint8_t RELAY_2 = 26;  
-static uint8_t RELAY_3 = 33;  
-static uint8_t RELAY_4 = 32;  
+static uint8_t RELAY_1 = 25;
+static uint8_t RELAY_2 = 26;
+static uint8_t RELAY_3 = 33;
+static uint8_t RELAY_4 = 32;
 //======GPIO Connect to Relay======//
 
 //=========GPIO Manual SW==========//
@@ -87,7 +87,7 @@ ezButton button4(39);
 //=========GPIO Manual SW==========//
 
 //=======Wi-Fi & gpio reset========//
-static uint8_t WIFI_LED    = 2;   
+static uint8_t WIFI_LED = 2;
 static uint8_t gpio_reset = 0;
 //=======Wi-Fi & gpio reset========//
 
@@ -112,8 +112,7 @@ static Switch my_switch4(device4, &RELAY_4);
 /*********************************
    sysProvEvent Function
 *********************************/
-void sysProvEvent(arduino_event_t *sys_event)
-{
+void sysProvEvent(arduino_event_t *sys_event) {
   switch (sys_event->event_id) {
     case ARDUINO_EVENT_PROV_START:
 #if CONFIG_IDF_TARGET_ESP32
@@ -134,8 +133,7 @@ void sysProvEvent(arduino_event_t *sys_event)
 /*************************************
    write_callback Function
 *************************************/
-void write_callback(Device *device, Param *param, const param_val_t val, void *priv_data, write_ctx_t *ctx)
-{
+void write_callback(Device *device, Param *param, const param_val_t val, void *priv_data, write_ctx_t *ctx) {
   const char *device_name = device->getDeviceName();
   const char *param_name = param->getParamName();
   //----------------------------------------------------------------------------------
@@ -210,15 +208,15 @@ void setup() {
   // initialize EEPROM with predefined size
   EEPROM.begin(EEPROM_SIZE);
   //------------------------------------------------------------------------------
-  IrReceiver.begin(IR_RECEIVE_PIN); // Start the IR receiver
+  IrReceiver.begin(IR_RECEIVE_PIN);  // Start the IR receiver
   //------------------------------------------------------------------------------
-  
+
   //RF433 Mhz
   mySwitch.enableReceive(rfreceive_pin);
-  
+
   //Start read DHT11
   dht.begin();  //เริ่มอ่านข้อมูล DHT Sensor
-  
+
   // Set the Relays GPIOs as output mode
   pinMode(RELAY_1, OUTPUT);
   pinMode(RELAY_2, OUTPUT);
@@ -281,6 +279,8 @@ void setup() {
   // Timer for Sending Sensor's Data
   timer.setInterval(10000L, dhtSensorData);
 
+  WiFi.onEvent(WiFiEvent);
+
   WiFi.onEvent(sysProvEvent);
 #if CONFIG_IDF_TARGET_ESP32
   WiFiProv.beginProvision(WIFI_PROV_SCHEME_BLE, WIFI_PROV_SCHEME_HANDLER_FREE_BTDM, WIFI_PROV_SECURITY_1, pop, service_name);
@@ -311,27 +311,39 @@ void setup() {
 }
 
 //=============DHT11==============//
-void dhtSensorData(){
+void dhtSensorData() {
   float humi1 = dht.readHumidity();
-  float temp1 = dht.readTemperature(); // or dht.readTemperature(true) for Fahrenheit
-  if (isnan(humi1) || isnan(temp1)){ 
- Serial.println("Read from DHT Sensor");
-  return;
+  float temp1 = dht.readTemperature();  // or dht.readTemperature(true) for Fahrenheit
+  if (isnan(humi1) || isnan(temp1)) {
+    Serial.println("Read from DHT Sensor");
+    return;
   }
-    temperature1.updateAndReportParam("Temperature", temp1);
-    humidity1.updateAndReportParam("Temperature", humi1);
+  temperature1.updateAndReportParam("Temperature", temp1);
+  humidity1.updateAndReportParam("Temperature", humi1);
 }
 //=============DHT11==============//
+
+//======Check connect to wifi======//
+void WiFiEvent(WiFiEvent_t event, arduino_event_info_t info) {
+  switch (event) {
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+      Serial.println("Disconnected from station, attempting reconnection");
+      WiFi.reconnect();
+      break;
+    default:
+      break;
+  }
+}
+//======Check connect to wifi======//
 
 /**********************************
    loop Function
 **********************************/
-void loop()
-{
+void loop() {
   timer.run();
   //------------------------------------------------------------------------------
   // Read GPIO0 (external button to reset device
-  if (digitalRead(gpio_reset) == LOW) { //Push button pressed
+  if (digitalRead(gpio_reset) == LOW) {  //Push button pressed
     Serial.printf("Reset Button Pressed!\n");
     // Key debounce handling
     delay(100);
@@ -358,8 +370,7 @@ void loop()
   if (WiFi.status() != WL_CONNECTED) {
     //Serial.println("WiFi Not Connected");
     digitalWrite(WIFI_LED, LOW);
-  }
-  else {
+  } else {
     //Serial.println("WiFi Connected");
     digitalWrite(WIFI_LED, HIGH);
   }
@@ -410,8 +421,7 @@ void control_relay(int relay_no, int relay_pin, boolean &status) {
 /************************************
    IR remote_control Function
 ************************************/
-void remoteir_control()
-{
+void remoteir_control() {
   if (IrReceiver.decode()) {
     String ir_code = String(IrReceiver.decodedIRData.command, HEX);
     if (ir_code.equals("0")) {
@@ -420,20 +430,17 @@ void remoteir_control()
     }
 
     Serial.println(ir_code);
-//Chang IR code value & Generate from ir-code.ino
+    //Chang IR code value & Generate from ir-code.ino
     if (ir_code == "16") {
       control_relay(1, RELAY_1, STATE_RELAY_1);
       my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_1);
-    }
-    else if (ir_code == "19") {
+    } else if (ir_code == "19") {
       control_relay(2, RELAY_2, STATE_RELAY_2);
       my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_2);
-    }
-    else if (ir_code == "d") {
+    } else if (ir_code == "d") {
       control_relay(3, RELAY_3, STATE_RELAY_3);
       my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_3);
-    }
-    else if (ir_code == "c") {
+    } else if (ir_code == "c") {
       control_relay(4, RELAY_4, STATE_RELAY_4);
       my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_4);
     }
@@ -452,16 +459,13 @@ void remoterf433_control() {
     if (value == 0xDDADA8) {
       control_relay(1, RELAY_1, STATE_RELAY_1);
       my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_1);
-    }
-    else if (value == 0xFF5F71) {
+    } else if (value == 0xFF5F71) {
       control_relay(2, RELAY_2, STATE_RELAY_2);
       my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_2);
-    }
-    else if (value == 0xFF5F72) {
+    } else if (value == 0xFF5F72) {
       control_relay(3, RELAY_3, STATE_RELAY_3);
       my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_3);
-    }
-    else if (value == 0xFF5F78) {
+    } else if (value == 0xFF5F78) {
       control_relay(4, RELAY_4, STATE_RELAY_4);
       my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, STATE_RELAY_4);
     }
