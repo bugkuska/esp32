@@ -1,4 +1,5 @@
 /*************************************************************************************************
+    Rev 0.1
     Created By: Sompoch Tongnamtiang
     Created On: 3 Nov, 2022
     Facebook : https://www.facebook.com/smfthailand
@@ -42,12 +43,20 @@
 SimpleTimer timer;
 //===============SimpleTimer===============//
 
-//================ModbusRTU================//
+//===========ModbusRTU (Serial1)===========//
 #define RXD1 16
 #define TXD1 17
 HardwareSerial rs485(1);
 #include "modbusRTU.h"
-//================ModbusRTU================//
+//===========ModbusRTU (Serial1)===========//
+
+//========Modbus-Master(Serial2)===========//
+#include <ModbusMaster.h>
+#define RXD2 26
+#define TXD2 27
+// instantiate ModbusMaster object
+ModbusMaster node1;  //Serial2 SlaveID1 XY-MD02
+//========Modbus-Master(Serial2)===========//
 
 //========VirtualPin Modbus Relay==========//
 #define Widget_btn_mbr1 V1
@@ -63,6 +72,8 @@ HardwareSerial rs485(1);
 #define Widget_btn_mbr11 V11
 #define Widget_btn_mbr12 V12
 //========VirtualPin Modbus Relay==========//
+
+//========VirtualPin Sensor&Data==========//
 //V13 XY-MD02 Temperature
 //V14 XY-MD02 Humidity
 //V15 WTR10-E Temperature
@@ -70,7 +81,7 @@ HardwareSerial rs485(1);
 //V17 MCU Temperature
 //V18 CurrentTime
 //V19 CurrentDate
-//========VirtualPin Modbus Relay==========//
+//========VirtualPin Sensor&Data==========//
 
 //=============Button Status===============//
 //SW1
@@ -111,14 +122,6 @@ boolean prevStateled11 = 0;
 boolean stateled12 = 0;
 boolean prevStateled12 = 0;
 //=============Button Status===============//
-
-//==============Modbus-Master==============//
-#include <ModbusMaster.h>
-#define RXD2 26
-#define TXD2 27
-// instantiate ModbusMaster object
-ModbusMaster node1;  //Serial2 SlaveID1 XY-MD02
-//==============Modbus-Master==============//
 
 //==============OLED Display===============//
 #include <Wire.h>         // Only needed for Arduino 1.6.5 and earlier
