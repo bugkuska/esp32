@@ -49,14 +49,6 @@ HardwareSerial rs485(1);
 #include "modbusRTU.h"
 //================ModbusRTU================//
 
-//==============Modbus-Master==============//
-#include <ModbusMaster.h>
-#define RXD2 26
-#define TXD2 27
-// instantiate ModbusMaster object
-ModbusMaster node1;  //Serial2 SlaveID1 XY-MD02
-//==============Modbus-Master==============//
-
 //========VirtualPin Modbus Relay==========//
 #define Widget_btn_mbr1 V1
 #define Widget_btn_mbr2 V2
@@ -120,11 +112,26 @@ boolean stateled12 = 0;
 boolean prevStateled12 = 0;
 //=============Button Status===============//
 
+//==============Modbus-Master==============//
+#include <ModbusMaster.h>
+#define RXD2 26
+#define TXD2 27
+// instantiate ModbusMaster object
+ModbusMaster node1;  //Serial2 SlaveID1 XY-MD02
+//==============Modbus-Master==============//
+
 //==============OLED Display===============//
 #include <Wire.h>         // Only needed for Arduino 1.6.5 and earlier
 #include "SSD1306Wire.h"  // legacy include: `#include "SSD1306.h"`
 SSD1306Wire display(0x3c, 21, 22);
 //==============OLED Display===============//
+
+//==============LCD I2C 2004===============//
+#include <Arduino.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27, 20, 4);
+//==============LCD I2C 2004===============//
 
 //=================NTP=====================//
 #include <NTPClient.h>
@@ -145,12 +152,19 @@ void setup() {
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
   node1.begin(1, Serial2);
 
+  //OLED
   display.init();
   display.display();
   display.flipScreenVertically();
   display.setFont(ArialMT_Plain_16);
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.display();
+  
+  //LCD 2004
+  // initialize LCD
+  lcd.begin();
+  // turn on LCD backlight
+  lcd.backlight();
 
   pinMode(ledblynk, OUTPUT);
   digitalWrite(ledblynk, HIGH);
@@ -158,8 +172,9 @@ void setup() {
   timer.setInterval(5000L, xymd02);              //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
   timer.setInterval(5000L, wtr10e);              //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
   timer.setInterval(5000L, inside_temperature);  //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
-  timer.setInterval(5000L, checkphysic_btn_state);
+  timer.setInterval(5000L, checkphysic_btn_state); //เช็คสถานะสวิตส์ทุก 5 วินาที
   timer.setInterval(30000L, datetime);  //Sync time every 30 sec
+    
   BlynkEdgent.begin();
 }
 //==============Setup Function=============//
@@ -294,7 +309,7 @@ void datetime() {
   Serial.println(currentDate);
   Serial.println();
   Blynk.virtualWrite(V19, currentDate);
-  display.drawString(0, 40, "Date :" + String(currentDate));  
+  display.drawString(0, 40, "Date :" + String(currentDate));
 }
 //==========Display NTP Date&Time==========//
 
@@ -438,90 +453,107 @@ void checkphysic_btn_state() {
   stateled1 = relayStatus_modbusRTU(2, 1);  //Check ON/OFF สวิตส์1
   if (stateled1 != prevStateled1) {
     if (stateled1 == 1) Blynk.virtualWrite(V1, 1);
+    lcd.setCursor(0, 3);
+    lcd.print("C1:");
+    if (stateled1 == 1)
+      lcd.print("ON ");
+
     if (stateled1 == 0) Blynk.virtualWrite(V1, 0);
+    lcd.setCursor(0, 3);
+    lcd.print("C1:");
+    if (stateled1 == 0)
+      lcd.print("OFF");
   }
   prevStateled1 = stateled1;
 
   stateled2 = relayStatus_modbusRTU(2, 2);  //Check ON/OFF สวิตส์2
   if (stateled2 != prevStateled2) {
     if (stateled2 == 1) Blynk.virtualWrite(V2, 1);
+    lcd.setCursor(7, 3);
+    lcd.print("C2:");
+    if (stateled2 == 1)
+      lcd.print("ON ");
+
     if (stateled2 == 0) Blynk.virtualWrite(V2, 0);
+    lcd.setCursor(7, 3);
+    lcd.print("C2:");
+    if (stateled2 == 0)
+      lcd.print("OFF");
   }
   prevStateled2 = stateled2;
 
   stateled3 = relayStatus_modbusRTU(2, 3);  //Check ON/OFF สวิตส์3
   if (stateled3 != prevStateled3) {
     if (stateled3 == 1) Blynk.virtualWrite(V3, 1);
+    lcd.setCursor(14, 3);
+    lcd.print("C3:");
+    if (stateled3 == 1)
+      lcd.print("ON ");
     if (stateled3 == 0) Blynk.virtualWrite(V3, 0);
+    lcd.setCursor(14, 3);
+    lcd.print("C3:");
+    if (stateled3 == 0)
+      lcd.print("OFF");
   }
   prevStateled3 = stateled3;
 
-  stateled4 = relayStatus_modbusRTU(2, 4);
-  ;  //Check ON/OFF สวิตส์4
+  stateled4 = relayStatus_modbusRTU(2, 4);  //Check ON/OFF สวิตส์4
   if (stateled4 != prevStateled4) {
     if (stateled4 == 1) Blynk.virtualWrite(V4, 1);
     if (stateled4 == 0) Blynk.virtualWrite(V4, 0);
   }
   prevStateled4 = stateled4;
 
-  stateled5 = relayStatus_modbusRTU(2, 5);
-  ;  //Check ON/OFF สวิตส์5
+  stateled5 = relayStatus_modbusRTU(2, 5);  //Check ON/OFF สวิตส์5
   if (stateled5 != prevStateled5) {
     if (stateled5 == 1) Blynk.virtualWrite(V5, 1);
     if (stateled5 == 0) Blynk.virtualWrite(V5, 0);
   }
   prevStateled5 = stateled5;
 
-  stateled6 = relayStatus_modbusRTU(2, 6);
-  ;  //Check ON/OFF สวิตส์6
+  stateled6 = relayStatus_modbusRTU(2, 6);  //Check ON/OFF สวิตส์6
   if (stateled6 != prevStateled6) {
     if (stateled6 == 1) Blynk.virtualWrite(V6, 1);
     if (stateled6 == 0) Blynk.virtualWrite(V6, 0);
   }
   prevStateled6 = stateled6;
 
-  stateled7 = relayStatus_modbusRTU(2, 7);
-  ;  //Check ON/OFF สวิตส์7
+  stateled7 = relayStatus_modbusRTU(2, 7);  //Check ON/OFF สวิตส์7
   if (stateled7 != prevStateled7) {
     if (stateled7 == 1) Blynk.virtualWrite(V7, 1);
     if (stateled7 == 0) Blynk.virtualWrite(V7, 0);
   }
   prevStateled7 = stateled7;
 
-  stateled8 = relayStatus_modbusRTU(2, 8);
-  ;  //Check ON/OFF สวิตส์8
+  stateled8 = relayStatus_modbusRTU(2, 8);  //Check ON/OFF สวิตส์8
   if (stateled8 != prevStateled8) {
     if (stateled8 == 1) Blynk.virtualWrite(V8, 1);
     if (stateled8 == 0) Blynk.virtualWrite(V8, 0);
   }
   prevStateled8 = stateled8;
 
-  stateled9 = relayStatus_modbusRTU(2, 9);
-  ;  //Check ON/OFF สวิตส์9
+  stateled9 = relayStatus_modbusRTU(2, 9);  //Check ON/OFF สวิตส์9
   if (stateled9 != prevStateled9) {
     if (stateled9 == 1) Blynk.virtualWrite(V9, 1);
     if (stateled9 == 0) Blynk.virtualWrite(V9, 0);
   }
   prevStateled9 = stateled9;
 
-  stateled10 = relayStatus_modbusRTU(2, 10);
-  ;  //Check ON/OFF สวิตส์10
+  stateled10 = relayStatus_modbusRTU(2, 10);  //Check ON/OFF สวิตส์10
   if (stateled10 != prevStateled10) {
     if (stateled10 == 1) Blynk.virtualWrite(V10, 1);
     if (stateled10 == 0) Blynk.virtualWrite(V10, 0);
   }
   prevStateled10 = stateled10;
 
-  stateled11 = relayStatus_modbusRTU(2, 11);
-  ;  //Check ON/OFF สวิตส์11
+  stateled11 = relayStatus_modbusRTU(2, 11);  //Check ON/OFF สวิตส์11
   if (stateled11 != prevStateled11) {
     if (stateled11 == 1) Blynk.virtualWrite(V11, 1);
     if (stateled11 == 0) Blynk.virtualWrite(V11, 0);
   }
   prevStateled11 = stateled11;
 
-  stateled12 = relayStatus_modbusRTU(2, 12);
-  ;  //Check ON/OFF สวิตส์6
+  stateled12 = relayStatus_modbusRTU(2, 12);  //Check ON/OFF สวิตส์6
   if (stateled12 != prevStateled12) {
     if (stateled12 == 1) Blynk.virtualWrite(V12, 1);
     if (stateled12 == 0) Blynk.virtualWrite(V12, 0);
@@ -540,7 +572,7 @@ void loop() {
   float BoardTemp;
   BoardTemp = Clock.getTemperature();
   display.drawString(0, 23, "Temp :" + String(BoardTemp) + " C");
- 
+
   //Display date on oled
   timeClient.begin();
   String weekDays[7] = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
@@ -563,6 +595,19 @@ void loop() {
   //Print complete date:
   String currentDate = (String)monthDay + ":" + (String)currentMonthName + ":" + (String)currentYear;
   display.drawString(0, 44, "Date " + String(currentDate));
+
+  //LCD 2004
+  lcd.setCursor(2, 0);
+  lcd.print("FB/SMFTHAILAND");
+
+  lcd.setCursor(2, 1);
+  lcd.print("MCU TEMP:");
+  lcd.print(BoardTemp);
+  lcd.print(" C");
+
+  lcd.setCursor(2, 2);
+  lcd.print("DATE:");
+  lcd.print(currentDate);
 
   BlynkEdgent.run();
   timer.run();
