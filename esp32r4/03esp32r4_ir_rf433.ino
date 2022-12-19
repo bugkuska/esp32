@@ -368,7 +368,7 @@ void manual_control() {
 
 // Loop function
 void loop() {
-  //manual_control();
+  manual_control();
   ir_remote();  //IR remote Control
   remoterf433_control();
   Blynk.run();
