@@ -67,7 +67,7 @@ decode_results results;
 
 //RF433 Mhz
 #include <RCSwitch.h>
-const int rfreceive_pin = 4;
+const int rfreceive_pin = 27;
 RCSwitch mySwitch = RCSwitch();
 
 // define the GPIO connected with Relays and switches
