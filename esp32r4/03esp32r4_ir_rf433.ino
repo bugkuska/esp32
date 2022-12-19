@@ -71,15 +71,15 @@ const int rfreceive_pin = 27;
 RCSwitch mySwitch = RCSwitch();
 
 // define the GPIO connected with Relays and switches
-#define RelayPin1 26
-#define RelayPin2 25
+#define RelayPin1 25
+#define RelayPin2 26
 #define RelayPin3 33
 #define RelayPin4 32
 
-#define SwitchPin1 36
-#define SwitchPin2 39
-#define SwitchPin3 34
-#define SwitchPin4 35
+#define SwitchPin1 34
+#define SwitchPin2 35
+#define SwitchPin3 36
+#define SwitchPin4 39
 
 //Change the virtual pins according the rooms
 #define VPIN_BUTTON_1 V1
