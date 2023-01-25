@@ -18,8 +18,8 @@
     Wiring Nextion to ESP32
     5V >> 5V
     GND >> GND
-    RX >> RX0
-    TX >> TX0
+    RX >> TX0
+    TX >> RX0
   *Note : ระหว่าง upload source-code ให้ถอดสาย RX0 ออกจากบอร์ด ESP32 พอ upload source-code ค่อยต่อเข้าไปใหม่
     Hoo ya, have fun....
  *************************************************************************************************/
