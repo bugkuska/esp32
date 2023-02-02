@@ -1,5 +1,5 @@
 #include<Wire.h>
-#include<LiquidCrystal_I2C.h>
+#include<LiquidCrystal_I2C.h>      //https://github.com/bugkuska/esp32/raw/main/basic/lcd/LiquidCrystal_i2c.zip
 LiquidCrystal_I2C lcd(0x27,16,2);
 
 //dht11
@@ -9,7 +9,7 @@ LiquidCrystal_I2C lcd(0x27,16,2);
 DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   dht.begin();  
 }
 
