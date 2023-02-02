@@ -36,7 +36,6 @@ void loop() {
   delay(1000);  
   */
 
-
   float moisture_percentage3;
   int sensor_analog3;
   sensor_analog3 = analogRead(INPUT_3);
