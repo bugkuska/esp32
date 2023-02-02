@@ -1,6 +1,6 @@
 //#define INPUT_1 36
-#define INPUT_2 39
-//#define INPUT_3 34
+//#define INPUT_2 39
+#define INPUT_3 34
 //#define INPUT_4 33
 
 void setup() {
@@ -21,7 +21,7 @@ void loop() {
   Serial.print("%\n\n");
   delay(1000);  
 
-*/
+
 
   float ldr_percentage2;
   int sensor_analog2;
@@ -34,7 +34,9 @@ void loop() {
   Serial.print(ldr_percentage2);
   Serial.print("%\n\n");
   delay(1000);  
-/*
+  */
+
+
   float moisture_percentage3;
   int sensor_analog3;
   sensor_analog3 = analogRead(INPUT_3);
@@ -46,7 +48,7 @@ void loop() {
   Serial.print(moisture_percentage3);
   Serial.print("%\n\n");
   delay(1000);  
-
+/*
   float moisture_percentage4;
   int sensor_analog4;
   sensor_analog4 = analogRead(INPUT_4);
