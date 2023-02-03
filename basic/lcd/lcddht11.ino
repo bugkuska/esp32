@@ -4,7 +4,7 @@ LiquidCrystal_I2C lcd(0x27,16,2);
 
 //dht11
 #include <DHT.h>                  //https://github.com/adafruit/DHT-sensor-library
-#define DHTPIN 15
+#define DHTPIN 18
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
