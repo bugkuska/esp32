@@ -25,7 +25,7 @@ int distance;
 #define INPUT_1 36  //Analog input1 for read ldr data
 
 //soilmoisture
-#define INPUT_3 34  //Analog input3 for read soil moisture data
+#define INPUT_2 39  //Analog input3 for read soil moisture data
 
 //LCD
 #include <Wire.h>
@@ -52,17 +52,17 @@ void setup() {
   pinMode(trigPin, OUTPUT);  // Sets the trigPin as an Output
   pinMode(echoPin, INPUT);   // Sets the echoPin as an Input
 
-  timer.setInterval(2000L, dhtsensor);  //อ่านค่าเซ็นเซอร์ทุกๆ 2 วินาที
-  timer.setInterval(2000L, ultrasonic); //อ่านค่าเซ็นเซอร์ทุกๆ 2 วินาที
-  timer.setInterval(2000L, ldr);        //อ่านค่าเซ็นเซอร์ทุกๆ 2 วินาที
-  timer.setInterval(2000L, soil);       //อ่านค่าเซ็นเซอร์ทุกๆ 2 วินาที
+  timer.setInterval(2000L, sensordata);  //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
+  //timer.setInterval(2000L, ultrasonic); //อ่านค่าเซ็นเซอร์ทุกๆ 2 วินาที
+  //timer.setInterval(2000L, ldr);        //อ่านค่าเซ็นเซอร์ทุกๆ 2 วินาที
+  //timer.setInterval(2000L, soil);       //อ่านค่าเซ็นเซอร์ทุกๆ 2 วินาที
 }
 //================Setup Function==============//
 
 //==========Function อ่านข้อมูล DHT=============//
-void dhtsensor() {
+void sensordata() {
   // Wait a few seconds between measurements.
-  delay(2000);
+  //delay(2000);
 
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
@@ -94,9 +94,57 @@ void dhtsensor() {
   Serial.print(F("°C "));
   Serial.print(hif);
   Serial.println(F("°F"));
+  delay(1000);
+
+  //Ultra sonic
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  // Sets the trigPin on HIGH state for 10 micro seconds
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Reads the echoPin, returns the sound wave travel time in microseconds
+  duration = pulseIn(echoPin, HIGH);
+
+  // Calculating the distance
+  distance = duration * 0.034 / 2;
+  // Prints the distance on the Serial Monitor
+  Serial.print("Distance: ");
+  Serial.println(distance);
+  delay(1000);
+
+  //LDR
+  float ldr_percentage1;
+  int sensor_analog1;
+  sensor_analog1 = analogRead(INPUT_1);
+  Serial.print("Law LDR data 1:");
+  Serial.println(sensor_analog1);
+  ldr_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
+
+  Serial.print("LDR Percentage 1 = ");
+  Serial.print(ldr_percentage1);
+  Serial.print("%\n\n");
+  delay(1000);
+  
+  //SoilMoisture
+   float moisture_percentage3;
+  int sensor_analog3;
+  sensor_analog3 = analogRead(INPUT_2);
+  Serial.print("Law Soil data 3:");
+  Serial.println(sensor_analog3);
+  moisture_percentage3 = (100 - ((sensor_analog3 / 4095.00) * 100));
+
+  Serial.print("Moisture Percentage 3= ");
+  Serial.print(moisture_percentage3);
+  Serial.print("%\n\n");
+  delay(1000);
+
 }
 //==========Function อ่านข้อมูล DHT=============//
 
+/*
 //=======Function อ่านข้อมูล Ultra sonic=========//
 void ultrasonic() {
   // Clears the trigPin
@@ -119,7 +167,8 @@ void ultrasonic() {
   //delay(2000);
 }
 //=======Function อ่านข้อมูล Ultra sonic=========//
-
+*/
+/*
 //===========Function อ่านข้อมูล LDR=============//
 void ldr() {
   float ldr_percentage1;
@@ -135,12 +184,13 @@ void ldr() {
   delay(1000);
 }
 //===========Function อ่านข้อมูล LDR=============//
-
+*/
+/*
 //========Function อ่านข้อมูล SoilMoisture=======//
 void soil() {
   float moisture_percentage3;
   int sensor_analog3;
-  sensor_analog3 = analogRead(INPUT_3);
+  sensor_analog3 = analogRead(INPUT_2);
   Serial.print("Law Soil data 3:");
   Serial.println(sensor_analog3);
   moisture_percentage3 = (100 - ((sensor_analog3 / 4095.00) * 100));
@@ -151,13 +201,13 @@ void soil() {
   delay(1000);
 }
 //========Function อ่านข้อมูล SoilMoisture=======//
-
+*/
 //===============Function loop=================//
 void loop() {
   float h = dht.readHumidity();
   float t = dht.readTemperature();  // or dht.readTemperature(true) for Fahrenheit
 
-/*
+  /*
   Serial.print("Temperature:");
   Serial.println(t);
   Serial.print("Humidity:");
@@ -168,14 +218,14 @@ void loop() {
   lcd.begin();
   lcd.backlight();
   lcd.setCursor(1, 0);
-  lcd.print("TEMP =  ");
+  lcd.print("TEMP=");
   lcd.print(t);
-  lcd.print("  C ");
+  lcd.print(" C");
 
   lcd.setCursor(1, 1);
-  lcd.print("HUMI =  ");
+  lcd.print("HUMI=");
   lcd.print(h);
-  lcd.print("  % ");
+  lcd.print(" %");
 
   timer.run();
 }
