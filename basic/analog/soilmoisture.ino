@@ -1,6 +1,6 @@
 //#define INPUT_1 36
-//#define INPUT_2 39
-#define INPUT_3 34
+#define INPUT_2 39
+//#define INPUT_3 34
 //#define INPUT_4 33
 
 void setup() {
@@ -20,33 +20,19 @@ void loop() {
   Serial.print(ldr_percentage1);
   Serial.print("%\n\n");
   delay(1000);  
-
-
-
-  float ldr_percentage2;
-  int sensor_analog2;
-  sensor_analog2 = analogRead(INPUT_2);
-  Serial.print("Law LDR data 2:");
-  Serial.println(sensor_analog2);
-  ldr_percentage2 = ( 100 - ( (sensor_analog2/4095.00) * 100 ) );
-  
-  Serial.print("LDR Percentage 2= ");
-  Serial.print(ldr_percentage2);
-  Serial.print("%\n\n");
-  delay(1000);  
   */
 
-  float moisture_percentage3;
-  int sensor_analog3;
-  sensor_analog3 = analogRead(INPUT_3);
-  Serial.print("Law Soil data 3:");
-  Serial.println(sensor_analog3);
-  moisture_percentage3 = ( 100 - ( (sensor_analog3/4095.00) * 100 ) );
-  
-  Serial.print("Moisture Percentage 3= ");
-  Serial.print(moisture_percentage3);
+  float moisture_percentage2;
+  int sensor_analog2;
+  sensor_analog2 = analogRead(INPUT_2);
+  Serial.print("Law Soil data 2:");
+  Serial.println(sensor_analog2);
+  moisture_percentage2 = (100 - ((sensor_analog2 / 4095.00) * 100));
+
+  Serial.print("Moisture Percentage 2= ");
+  Serial.print(moisture_percentage2);
   Serial.print("%\n\n");
-  delay(1000);  
+  delay(1000);
 /*
   float moisture_percentage4;
   int sensor_analog4;
