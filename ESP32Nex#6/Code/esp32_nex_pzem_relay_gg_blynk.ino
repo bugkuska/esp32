@@ -290,6 +290,8 @@ void Pzem017toblynk() {
         uint32_t tempdouble = 0x00000000;
         PZEMVoltage = node1.getResponseBuffer(0x0000) / 100.0;
         PZEMCurrent = node1.getResponseBuffer(0x0001) / 100.0;
+        //Bitwise Operators in C/C++ https://www.geeksforgeeks.org/bitwise-operators-in-c-cpp/
+        //<< (left shift), >> (right shift)
         tempdouble = (node1.getResponseBuffer(0x0003) << 16) + node1.getResponseBuffer(0x0002);
         PZEMPower = tempdouble / 10.0;
         tempdouble = (node1.getResponseBuffer(0x0005) << 16) + node1.getResponseBuffer(0x0004);
