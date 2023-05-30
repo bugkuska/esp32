@@ -26,7 +26,7 @@
 #include "Nextion.h"  //Nextion libraries
 // (page id, component id, component name)
 NexText textemp1 = NexText(3, 2, "textemp1");
-NexText texhumi = NexText(3, 3, "texhumi");
+NexText texhumi1 = NexText(3, 3, "texhumi1");
 // Register objects to the touch event list
 NexTouch *nex_listen_list[] = {
 };
@@ -82,7 +82,7 @@ void xymdtoNex() {
   Serial.print(command1);
   endNextionCommand();
 
-  String command2 = "texhumi.txt=\"" + String(humi1) + "\"";
+  String command2 = "texhumi1.txt=\"" + String(humi1) + "\"";
   Serial.print(command2);
   endNextionCommand();
 }
