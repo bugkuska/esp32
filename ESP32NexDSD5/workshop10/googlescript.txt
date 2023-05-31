@@ -18,12 +18,12 @@ function doGet(e) {
       var value = stripQuotes(e.parameter[param]);
       Logger.log(param + ':' + e.parameter[param]);
       switch (param) {
-    	case 'Temperature':
+    	case 'temp1':
           rowData[2] = value; //Temperature in column C
           result = 'Temperature Written on column G'; 
           break;
 
-    	case 'Humidity':
+    	case 'humi1':
           rowData[3] = value; //Humidity in column D
           result = 'Humidity Written on column H'; 
           break;
