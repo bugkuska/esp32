@@ -43,25 +43,25 @@ String GAS_ID = "";  //Google Script id from deploy app
 //=========Nextion Library and Object==========//
 #include "Nextion.h"  //Nextion libraries
 // (page id, component id, component name)
-//Page 2 Dual State button
-NexButton bt0 = NexButton(2, 2, "bt0");
-NexButton bt1 = NexButton(2, 3, "bt1");
-//Page3 Text XY-MD02
-NexText textemp1 = NexText(3, 2, "textemp1");
-NexText texhumi1 = NexText(3, 3, "texhumi1");
-//Page 4 Progress BarXY-MD02
-NexText textemp2 = NexText(4, 2, "textemp2");
-NexText texhumi2 = NexText(4, 3, "texhumi2");
-NexProgressBar pgtemp1 = NexProgressBar(4, 4, "pgtemp1");
-NexProgressBar pghumi1 = NexProgressBar(4, 5, "pghumi1");
-//Page 5 Guage XY-MD02
-NexGauge guagetemp1 = NexGauge(5, 2, "guagetemp1");
-NexGauge guagehumi1 = NexGauge(5, 3, "guagehumi1");
-//Page 6 Guage LDR
-NexGauge guageldr = NexGauge(6, 5, "guageldr");
-NexText textldr = NexText(6, 6, "textldr");
-//Page 7 DualState Button-MB Relay
-//Modbus Relay
+//Page id 3 DualState Button
+NexButton bt0 = NexButton(3, 2, "bt0");
+NexButton bt1 = NexButton(3, 3, "bt1");
+
+//Page id 4 Text XY-MD02
+NexText textemp1 = NexText(4, 2, "textemp1");
+NexText texhumi1 = NexText(4, 3, "texhumi1");
+
+//Page id 5 Progress BarXY-MD02
+NexText textemp2 = NexText(5, 2, "textemp2");
+NexText texhumi2 = NexText(5, 3, "texhumi2");
+NexProgressBar pgtemp1 = NexProgressBar(5, 4, "pgtemp1");
+NexProgressBar pghumi1 = NexProgressBar(5, 5, "pghumi1");
+
+//Page id 6 Guage XY-MD02
+NexGauge guagetemp1 = NexGauge(6, 2, "guagetemp1");
+NexGauge guagehumi1 = NexGauge(6, 3, "guagehumi1");
+
+//Page id 7 Modbus Relay
 NexButton bt2 = NexButton(7, 2, "bt2");
 NexButton bt3 = NexButton(7, 3, "bt3");
 NexButton bt4 = NexButton(7, 4, "bt4");
@@ -70,6 +70,7 @@ NexButton bt6 = NexButton(7, 6, "bt6");
 NexButton bt7 = NexButton(7, 7, "bt7");
 NexButton bt8 = NexButton(7, 8, "bt8");
 NexButton bt9 = NexButton(7, 9, "bt9");
+
 // Declare variable global
 bool statusbt0 = false;
 bool statusbt1 = false;
@@ -104,10 +105,6 @@ NexTouch *nex_listen_list[] = {
 #define sw1 18
 #define sw2 19
 //==========Define IO connect to relay==========//
-
-//=======================LDR====================//
-#define INPUT_ldr 34
-//=======================LDR====================//
 
 //=================Modbus-Master================//
 #include <ModbusMaster.h>
@@ -335,9 +332,8 @@ void setup() {
   Serial.print("RSSI: ");
   Serial.println(WiFi.RSSI());
 
-  timer.setInterval(5000L, xymdtoNex);          //อ่านค่าเซ็นเซอร์และส่งไปยังจอ Nextion ทุกๆ 5 วินาที
-  timer.setInterval(5000L, sendldrtoNex);       //อ่านค่าเซ็นเซอร์และส่งไปยังจอ Nextion ทุกๆ 5 วินาที
-  timer.setInterval(10000L, sendData2GGSheet);  //ส่งค่าเซ็นเซอร์ขึ้น google sheet ทุกๆ 10 วินาที
+  timer.setInterval(10000L, xymdtoNex);          //อ่านค่าเซ็นเซอร์และส่งไปยังจอ Nextion ทุกๆ 5 วินาที
+  timer.setInterval(300000L, sendData2GGSheet);  //ส่งค่าเซ็นเซอร์ขึ้น google sheet ทุกๆ 10 วินาที
 }
 //=================Setup Function===============//
 
@@ -405,33 +401,6 @@ void xymdtoNex() {
 }
 //==============XY-MD02 to Nextion==============//
 
-//=================LDRtoNextion=================//
-void sendldrtoNex() {
-  float ldr_percentage1;
-  int sensor_analog1;
-  sensor_analog1 = analogRead(INPUT_ldr);
-  ldr_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
-
-  Serial.print("LDR Percentage 1 = ");
-  Serial.print(ldr_percentage1);
-  Serial.print("%\n\n");
-
-  //Page 6 Guage LDR
-  String command3 = "textldr.txt=\"" + String(ldr_percentage1) + "\"";
-  Serial.print(command3);
-  endNextionCommand();
-
-  String command4 = "textldr.txt=\"" + String(ldr_percentage1) + "\"";
-  Serial.print(command4);
-  endNextionCommand();
-
-  int val = map(ldr_percentage1, 0, 100, 0, 222);
-  Serial.print("guageldr.val=");  //Send the object tag
-  Serial.print(val);              //Send the value
-  endNextionCommand();
-}
-//=================LDRtoNextion=================//
-
 //=============SendData2GGSheet=================//
 void sendData2GGSheet() {
   //XY-MD02
@@ -442,7 +411,7 @@ void sendData2GGSheet() {
   delay(1000);
 
   HTTPClient http;
-  String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?temp1=" + temp1 + "&humi1=" + humi1; 
+  String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?temp1=" + temp1 + "&humi1=" + humi1 + "&lux=" ; 
   //Serial.print(url);
   Serial.println("Posting Temperature and humidity data to Google Sheet");
   //---------------------------------------------------------------------
