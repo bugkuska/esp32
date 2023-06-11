@@ -1,7 +1,7 @@
 /*************************************************************************************************
     Created By: Sompoch Tongnamtiang
     Created On: 6 Mar, 2023
-    Update On: 8 June, 2023
+    Update On: 11 June, 2023 Multi-tasking
     Facebook : https://www.facebook.com/smfthailand
     YouTube Channel : https://www.youtube.com/bugkuska
  *  *********************************************************************************************
@@ -137,10 +137,10 @@ NexTouch *nex_listen_list[] = {
 
 //=================Modbus-Master================//
 #include <ModbusMaster.h>
-#define RXD2 16
-#define TXD2 17
-#define RXD1 26
-#define TXD1 27
+#define RXD2 16         //Serial2
+#define TXD2 17         //Serial2
+#define RXD1 26         //Serial1
+#define TXD1 27         //Serial1
 // instantiate ModbusMaster object
 ModbusMaster node1;  //Serial2 SlaveID1 XY-MD02
 float humi1 = 0.0f;
@@ -151,9 +151,11 @@ int8_t pool_size1;   //Pool size for Modbus Write command
 
 //=================Modbus-Master================//
 
+//================Task Delay====================//
 const TickType_t xDelay2000ms = pdMS_TO_TICKS(2000);
 const TickType_t xDelay5000ms = pdMS_TO_TICKS(5000);
 const TickType_t xDelay10000ms = pdMS_TO_TICKS(10000);
+//================Task Delay====================//
 
 //================ON,OFF Relay1=================//
 void bt0PushCallback(void *ptr) {
@@ -461,10 +463,10 @@ if (!wifiManager.autoConnect("BBWiFi-Config", "0814111142")) {   //ชื่อ 
 void setup() {
   Serial.begin(9600);
 
-  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
-  Serial1.begin(9600, SERIAL_8N1, RXD1, TXD1);
-  node1.begin(1, Serial2);
-  node2.begin(2, Serial1);
+  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2); //GPIO16, GPIO17
+  Serial1.begin(9600, SERIAL_8N1, RXD1, TXD1); //GPIO26, GPIO27
+  node1.begin(1, Serial2);          //Serial2 สำหรับอ่านข้อมูล Sensor
+  node2.begin(2, Serial1);          //Serial1 สำหรับควบคุม Modbus Relay
 
   //Initialize Nextion Library
   nexInit();
@@ -484,7 +486,6 @@ void setup() {
   bt8.attachPush(bt8PushCallback, &bt8);
   bt9.attachPush(bt9PushCallback, &bt9);
 
-
   // Set IO pinMode for relay
   pinMode(sw1, OUTPUT);
   pinMode(sw2, OUTPUT);
@@ -498,9 +499,8 @@ void setup() {
   Serial.print("RSSI: ");
   Serial.println(WiFi.RSSI());
 
-  timer.setInterval(30000L, checkBlynkStatus);
+  timer.setInterval(30000L, checkBlynkStatus);  //Check สถานะการเชื่อมต่อ Blynk Server ทุกๆ 30 วินาที
 
-  //Blynk.config(auth);
   Blynk.config(blynk_token);
   delay(1000);
 
@@ -508,7 +508,8 @@ void setup() {
     Blynk.virtualWrite(V3, HIGH);
     Blynk.virtualWrite(V4, HIGH);
   }
-
+//สร้าง Task สำหรับจัดการงานหลายงาน ตัวอย่างสร้าง 4 Task
+//taskOne สำหรับอ่านข้อมูล Sensor ตัวที่ 1 และส่งค่าไปแสดงผลบนจอ Nextion
   xTaskCreate(
     taskOne,   /* Task function. */
     "TaskOne", /* String with name of task. */
@@ -516,7 +517,7 @@ void setup() {
     NULL,      /* Parameter passed as input of the task */
     1,         /* Priority of the task. */
     NULL);     /* Task handle. */
-
+//taskTwo สำหรับอ่านข้อมูล Sensor ตัวที่ 1 และส่งค่าไปแสดงผลบน Blynk
   xTaskCreate(
     taskTwo,   /* Task function. */
     "TaskTwo", /* String with name of task. */
@@ -524,7 +525,7 @@ void setup() {
     NULL,      /* Parameter passed as input of the task */
     1,         /* Priority of the task. */
     NULL);     /* Task handle. */
-
+//taskThree จัดการการเชื่อมต่อไปที่ Blynk
   xTaskCreate(
     taskThree,   /* Task function. */
     "TaskThree", /* String with name of task. */
@@ -532,7 +533,7 @@ void setup() {
     NULL,        /* Parameter passed as input of the task */
     1,           /* Priority of the task. */
     NULL);
-
+//taskFour สำหรับอ่านข้อมูล Sensor ตัวที่ 1 และส่งค่าไปเก็บไว้บน Google Sheet
   xTaskCreate(
     taskFour,    /* Task function. */
     "TaskThree", /* String with name of task. */
@@ -545,7 +546,7 @@ void setup() {
 
 //===============taskOne=================//
 void taskOne(void *parameter) {
-  Serial.println(String("taskOne 111111111111"));
+  Serial.println(String("taskOne Sensor data to Nextion"));
   while (true) {
     uint8_t result1;
     float temp1 = (node1.getResponseBuffer(0) / 10.0f);
@@ -614,7 +615,7 @@ void taskOne(void *parameter) {
 
 //===============taskTwo=================//
 void taskTwo(void *parameter) {
-  Serial.println(String("taskTwo 2222222222"));
+  Serial.println(String("taskTwo Sensor data to Blynk.IoT"));
   while (true) {
     uint8_t result1;
     float temp1 = (node1.getResponseBuffer(0) / 10.0f);
@@ -639,7 +640,7 @@ void taskTwo(void *parameter) {
 
 //==============taskThree================//
 void taskThree(void *parameter) {
-  Serial.println(String("taskThree 3333333333"));
+  Serial.println(String("taskThree Blynk Handle"));
   while (true) {
     Blynk.run();
     vTaskDelay(xDelay2000ms);
@@ -650,7 +651,7 @@ void taskThree(void *parameter) {
 //==============taskFour=================//
 
 void taskFour(void *parameter) {
-  Serial.println(String("taskFour 4444444444"));
+  Serial.println(String("taskFour Sensor data to Google Sheet"));
   while (true) {
     uint8_t result1;
     float temp1 = (node1.getResponseBuffer(0) / 10.0f);
