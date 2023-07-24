@@ -1,7 +1,7 @@
-#define INPUT_1 36
-//#define INPUT_2 39
-//#define INPUT_3 34
-//#define INPUT_4 33
+//#define INPUT_1 35
+//#define INPUT_2 34
+#define INPUT_3 39
+//#define INPUT_4 36
 
 void setup() {
   // put your setup code here, to run once:
@@ -10,7 +10,7 @@ void setup() {
 void loop() {
   float ldr_percentage1;
   int sensor_analog1;
-  sensor_analog1 = analogRead(INPUT_1);
+  sensor_analog1 = analogRead(INPUT_3);
   Serial.print("Law LDR data 1:");
   Serial.println(sensor_analog1);
   ldr_percentage1 = ( 100 - ( (sensor_analog1/4095.00) * 100 ) );
