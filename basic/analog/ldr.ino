@@ -1,7 +1,7 @@
 //#define INPUT_1 35
 //#define INPUT_2 34
-#define INPUT_3 36
-//#define INPUT_4 39
+#define INPUT_3 39
+//#define INPUT_4 36
 
 void setup() {
   // put your setup code here, to run once:
