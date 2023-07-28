@@ -1,3 +1,10 @@
+/*************************************************************************************************
+    Created By: Sompoch Tongnamtiang
+    Created On: 28 June, 2023
+    Update On: 28 July, 2023
+    Facebook : https://www.facebook.com/smfthailand
+    YouTube Channel : https://www.youtube.com/bugkuska
+ *  *********************************************************************************************/
 //Workshop1-DHT11/DHT22
 //dht11,dht22
 #include <DHT.h>  //https://github.com/adafruit/DHT-sensor-library
@@ -129,29 +136,33 @@ void loop() {
   Serial.print("Methane gas ADC : ");
   Serial.println(sensor_analog2);
   delay(1000);
+  
+    //Workshop7-I2C LCD2004
+    lcd.begin();
+    lcd.backlight();
+    lcd.setCursor(1, 0);
+    lcd.print("TEMP =  ");
+    lcd.print(t);
+    lcd.setCursor(16,0);
+    lcd.print("C");
 
-  //Workshop7-I2C LCD2004
-  lcd.begin();
-  lcd.backlight();
-  lcd.setCursor(1, 0);
-  lcd.print("TEMP =  ");
-  lcd.print(t);
-  lcd.print("  C ");
+    lcd.setCursor(1, 1);
+    lcd.print("HUMI =  ");
+    lcd.print(h);
+    lcd.setCursor(16,1);
+    lcd.print("%");
 
-  lcd.setCursor(1, 1);
-  lcd.print("HUMI =  ");
-  lcd.print(h);
-  lcd.print("  % ");
+    lcd.setCursor(1, 2);
+    lcd.print("Soil =  ");
+    lcd.print(moisture_percentage1);
+    lcd.setCursor(16,2);
+    lcd.print("%");
 
-  lcd.setCursor(1, 2);
-  lcd.print("Soil =  ");
-  lcd.print(moisture_percentage1);
-  lcd.print("  % ");
-
-  lcd.setCursor(1, 3);
-  lcd.print("MQ4 =  ");
-  lcd.print(sensor_analog2);
-  lcd.print("  ppm ");
+    lcd.setCursor(1, 3);
+    lcd.print("MQ4  =  ");
+    lcd.print(sensor_analog2);
+    lcd.setCursor(16,3);
+    lcd.print("PPM");
 
   timer.run();
 
