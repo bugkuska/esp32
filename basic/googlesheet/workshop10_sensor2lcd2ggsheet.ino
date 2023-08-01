@@ -86,7 +86,7 @@ void sendData2GGSheet() {
   sensor_analog2 = analogRead(INPUT_2);
 
   HTTPClient http;
-  String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?t=" + t + "&h=" + h + "&moisture_percentage1="+moisture_percentage1 + "&sensor_analog2=" + sensor_analog2;
+  String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?t=" + t + "&h=" + h + "&moisture_percentage1="+moisture_percentage1 + "&mq4=" + mq4;
   //Serial.print(url);
   Serial.println("Posting Temperature and humidity data to Google Sheet");
   //---------------------------------------------------------------------
