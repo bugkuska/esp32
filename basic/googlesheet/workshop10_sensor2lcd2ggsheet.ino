@@ -82,8 +82,8 @@ void sendData2GGSheet() {
   sensor_analog1 = analogRead(INPUT_1);
   moisture_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
 
-  int sensor_analog2;
-  sensor_analog2 = analogRead(INPUT_2);
+  int mq4;
+  mq4 = analogRead(INPUT_2);
 
   HTTPClient http;
   String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?t=" + t + "&h=" + h + "&moisture_percentage1="+moisture_percentage1 + "&mq4=" + mq4;
@@ -131,10 +131,10 @@ void loop() {
   delay(1000);
 
   //Workshop5-MQ4 Methane Gas
-  int sensor_analog2;
-  sensor_analog2 = analogRead(INPUT_2);
+  int mq4;
+  mq4 = analogRead(INPUT_2);
   Serial.print("Methane gas ADC : ");
-  Serial.println(sensor_analog2);
+  Serial.println(mq4);
   delay(1000);
   
     //Workshop7-I2C LCD2004
@@ -160,7 +160,7 @@ void loop() {
 
     lcd.setCursor(1, 3);
     lcd.print("MQ4  =  ");
-    lcd.print(sensor_analog2);
+    lcd.print(mq4);
     lcd.setCursor(16,3);
     lcd.print("PPM");
 
