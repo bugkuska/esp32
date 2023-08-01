@@ -11,6 +11,8 @@ void loop() {
   int sensor_analog2;
   sensor_analog2 = analogRead(INPUT_2);
   Serial.print("Methane gas ADC : ");
-  Serial.println(sensor_analog2);
+  Serial.print(sensor_analog2);
+  Serial.print(" PPM");
+  Serial.println();
   delay(1000);
 }
