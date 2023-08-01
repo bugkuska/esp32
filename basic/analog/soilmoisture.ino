@@ -2,10 +2,13 @@
 //#define INPUT_2 34
 //#define INPUT_3 36
 //#define INPUT_4 39
+#define relaypin 25
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);     
+  Serial.begin(9600);
+  pinMode(relaypin, OUTPUT);
+  digitalWrite(relaypin, LOW);
 }
 void loop() {
   float moisture_percentage1;
@@ -19,4 +22,10 @@ void loop() {
   Serial.print(moisture_percentage1);
   Serial.print("%\n\n");
   delay(1000);
+
+  if (moisture_percentage1 < 50) {
+    digitalWrite(relaypin, HIGH);
+  } else {
+    digitalWrite(relaypin, LOW);
+  }
 }
