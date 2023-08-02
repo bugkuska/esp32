@@ -38,9 +38,9 @@
   *  *********************************************************************************************
  *************************************************************************************************/
 /* Fill-in your Template ID (only if using Blynk.Cloud) */
-#define BLYNK_TEMPLATE_ID "TMPL6RUTSLPLq"                    //Template ID from Blynk.console
-#define BLYNK_TEMPLATE_NAME "dsd5esp32"                      //Template Name from Blynk.console
-#define BLYNK_AUTH_TOKEN "IZmbQ1yx2QZcaworX5sAe7O4rMA8FIIH"  //Auth token from Blynk.console
+#define BLYNK_TEMPLATE_ID ""                    //Template ID from Blynk.console
+#define BLYNK_TEMPLATE_NAME ""                      //Template Name from Blynk.console
+#define BLYNK_AUTH_TOKEN ""  //Auth token from Blynk.console
 #define BLYNK_FIRMWARE_VERSION "0.1.0"
 bool fetch_blynk_state = true;  //true or false
 #define BLYNK_PRINT Serial
@@ -101,8 +101,8 @@ DHT dht(DHTPIN, DHTTYPE);
 #include <LiquidCrystal_I2C.h>  //https://github.com/bugkuska/esp32/raw/main/basic/lcd/LiquidCrystal_i2c.zip
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 //========Workshop8-Connect to Wi-Fi===========//
-//char ssid[] = "smf001";      //ชื่อ Wi-Fi รองรับคลื่น 2.4GHz เท่านั้น
-//char pass[] = "0814111142";  //รหัสเชื่อมต่อ Wi-Fi
+//char ssid[] = "";      //ชื่อ Wi-Fi รองรับคลื่น 2.4GHz เท่านั้น
+//char pass[] = "";  //รหัสเชื่อมต่อ Wi-Fi
 //int wifiFlag = 0;
 unsigned long previousMillis = 0;
 unsigned long interval = 30000;
@@ -111,7 +111,7 @@ unsigned long interval = 30000;
 #include <HTTPClient.h>
 const char *host = "script.google.com";
 const char *httpsPort = "443";
-String GAS_ID = "AKfycbwnIeCr9in8zzxJ-IC6uv96xjt3gu8mtSosBVYNPqotlhwhjEEaup1DO22Kvuhhvdu4LQ";  //Deployment ID from deploy app
+String GAS_ID = "";  //Deployment ID from deploy app
 //==============================================//
 /*
 //==============Wi-Fi Connection================//
