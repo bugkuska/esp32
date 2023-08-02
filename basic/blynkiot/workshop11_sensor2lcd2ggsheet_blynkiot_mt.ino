@@ -1,4 +1,10 @@
 /*************************************************************************************************
+    Created By: Sompoch Tongnamtiang
+    Created On: 28 June, 2023
+    Update On: 2 Aug, 2023
+    Facebook : https://www.facebook.com/smfthailand
+    YouTube Channel : https://www.youtube.com/bugkuska
+ *  *********************************************************************************************
 Map Blynk VirtualPin 
 V1 Relay Channel 1
 V2 Relay Channel 2
@@ -10,12 +16,12 @@ V7 SoilMoisture Sensor
 V8 MQ4-Methane Gas Sensor
  *************************************************************************************************/
 /* Fill-in your Template ID (only if using Blynk.Cloud) */
-#define BLYNK_TEMPLATE_ID ""
-#define BLYNK_TEMPLATE_NAME ""
-#define BLYNK_AUTH_TOKEN ""
+#define BLYNK_TEMPLATE_ID ""                         //Template ID from Blynk.console
+#define BLYNK_TEMPLATE_NAME ""                       //Template Name from Blynk.console
+#define BLYNK_AUTH_TOKEN ""                          //Auth token from Blynk.console
 #define BLYNK_FIRMWARE_VERSION "0.1.0"
 bool fetch_blynk_state = true;  //true or false
-//#define BLYNK_PRINT Serial
+#define BLYNK_PRINT Serial
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
@@ -25,18 +31,20 @@ char auth[] = BLYNK_AUTH_TOKEN;
 SimpleTimer timer;
 //================SimpleTimer================//
 // สร้างตัวแปรเก็บค่า Tick ที่แปลงจากเวลาที่เป็น millisecond
-const TickType_t xDelay1000ms = pdMS_TO_TICKS(1000);    //Data to LCD2004
-const TickType_t xDelay10000ms = pdMS_TO_TICKS(10000);  //Data to blynk
+const TickType_t xDelay1000ms = pdMS_TO_TICKS(1000);    //Display Sensor data (DHT11/DHT22, SoilMoisture, MQ4) on LCD2004
+const TickType_t xDelay10000ms = pdMS_TO_TICKS(10000);  //Sensor data (DHT11/DHT22, SoilMoisture, MQ4) to blynk
+const TickType_t xDelay60000ms = pdMS_TO_TICKS(60000);  //Sensor data (DHT11/DHT22, SoilMoisture, MQ4) to Google Sheet
 // สร้างตัวแปร TaskHandle สำหรับแต่ละ Task
-TaskHandle_t Task1 = NULL;
-TaskHandle_t Task2 = NULL;
-TaskHandle_t Task3 = NULL;
-TaskHandle_t Task4 = NULL;
+TaskHandle_t Task1 = NULL;  //Display Data on LCD2004
+TaskHandle_t Task2 = NULL;  //DHT11,DHT22 to Blynk 2.0
+TaskHandle_t Task3 = NULL;  //Soilmoisture to Blynk 2.0
+TaskHandle_t Task4 = NULL;  //MQ4-Methane to Blynk 2.0
+TaskHandle_t Task5 = NULL;  //Sensor data (DHT11/DHT22, SoilMoisture, MQ4) to Google Sheet
 //=========Define IO connect to relay========//
-#define relay1 25    //Relay channel1
-#define relay2 33    //Relay channel2
-#define relay3 32    //Relay channel3
-#define relay4 23    //Relay channel4
+#define relay1 25   //Relay channel1
+#define relay2 33   //Relay channel2
+#define relay3 32   //Relay channel3
+#define relay4 23   //Relay channel4
 #define ledblynk 2  //Led for check blynk connection
 //=========Define IO connect to relay========//
 //==========Workshop1-DHT11/DHT22============//
@@ -58,7 +66,6 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 char ssid[] = "";      //ชื่อ Wi-Fi รองรับคลื่น 2.4GHz เท่านั้น
 char pass[] = "";  //รหัสเชื่อมต่อ Wi-Fi
 int wifiFlag = 0;
-//#define wifiLed 2  //D2
 unsigned long previousMillis = 0;
 unsigned long interval = 30000;
 //==============Senddata2GGSheet===============//
@@ -66,65 +73,8 @@ unsigned long interval = 30000;
 #include <HTTPClient.h>
 const char *host = "script.google.com";
 const char *httpsPort = "443";
-String GAS_ID = "";  //Google Script id from deploy app
+String GAS_ID = "";  //Deployment ID from deploy app
 //==============================================//
-//=================Setup Function===============//
-void setup() {
-  Serial.begin(9600);
-  dht.begin();
-  //LCD 2004
-  lcd.begin();      // initialize LCD
-  lcd.backlight();  // turn on LCD backlight
-
-  // Set IO pinMode for relay
-  pinMode(relay1, OUTPUT);
-  pinMode(relay2, OUTPUT);
-  pinMode(relay3, OUTPUT);
-  pinMode(relay4, OUTPUT);
-  pinMode(ledblynk, OUTPUT);
-  //pinMode(wifiLed, OUTPUT);
-
-  //Set default relay status at boot
-  digitalWrite(relay1, LOW);
-  digitalWrite(relay2, LOW);
-  digitalWrite(relay3, LOW);
-  digitalWrite(relay4, LOW);
-  digitalWrite(ledblynk, LOW);
-  //digitalWrite(wifiLed, LOW);
-
-  initWiFi();
-  Serial.print("RSSI: ");
-  Serial.println(WiFi.RSSI());
-
-  timer.setInterval(10000L, checkBlynkStatus);  // check if Blynk server is connected every 10 seconds
-  //timer.setInterval(5000L, dhtsensor);          //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
-  //timer.setInterval(5000L, soilmoisture);       //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
-  //timer.setInterval(5000L, mq4methane);         //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
-  timer.setInterval(10000L, sendData2GGSheet);  //อ่านค่าเซ็นเซอร์ทุกๆ 10 วินาที
-
-  Blynk.config(auth);
-  delay(1000);
-  if (!fetch_blynk_state) {
-  }
-
-  /*Task function
-  String with name of task
-  Stack size in words
-  Parameter passed as input of the task
-  Priority of the task
-  Task handle
-  Core  
-  */
-  // สร้าง Task1 โดยใช้ฟังก์ชัน func1_Task()
-  xTaskCreatePinnedToCore(func1_Task, "Task1", 10000, NULL, 1, &Task1, 1);
-  // สร้าง Task2 โดยใช้ฟังก์ชัน func2_Task()
-  xTaskCreatePinnedToCore(func2_Task, "Task2", 10000, NULL, 2, &Task2, 1);
-  // สร้าง Task3 โดยใช้ฟังก์ชัน func3_Task()
-  xTaskCreatePinnedToCore(func3_Task, "Task3", 10000, NULL, 3, &Task3, 1);
-  // สร้าง Task4 โดยใช้ฟังก์ชัน func4_Task()
-  xTaskCreatePinnedToCore(func4_Task, "Task4", 10000, NULL, 4, &Task4, 1);
-}
-//=================Setup Function===============//
 
 //==============Wi-Fi Connection================//
 void initWiFi() {
@@ -142,15 +92,74 @@ void initWiFi() {
 }
 //==============Wi-Fi Connection================//
 
+//=================Setup Function===============//
+void setup() {
+  Serial.begin(9600);
+
+  dht.begin();  //เริ่มอ่านข้อมูลจาก Sensor DHT11/DHT22
+
+  lcd.begin();      // initialize LCD2004
+  lcd.backlight();  // turn on LCD backlight
+
+  // Set IO pinMode for relay
+  pinMode(relay1, OUTPUT);
+  pinMode(relay2, OUTPUT);
+  pinMode(relay3, OUTPUT);
+  pinMode(relay4, OUTPUT);
+  pinMode(ledblynk, OUTPUT);
+
+  //Set default relay status at boot
+  digitalWrite(relay1, LOW);
+  digitalWrite(relay2, LOW);
+  digitalWrite(relay3, LOW);
+  digitalWrite(relay4, LOW);
+  digitalWrite(ledblynk, LOW);
+
+  initWiFi();
+  Serial.print("RSSI: ");
+  Serial.println(WiFi.RSSI());
+
+  Blynk.config(auth);
+  delay(1000);
+
+  timer.setInterval(30000L, checkBlynkStatus);  // เช็คการเชื่อมต่อไปที่ Blynk server ทุกๆ 30 วินาที
+  //timer.setInterval(60000L, sendData2GGSheet);  //ส่งค่าไปยัง Google Sheet ทุกๆ 1 นาที
+
+  /*********************
+  - Task function
+  - String with name of task
+  - Stack size in words
+  - Parameter passed as input of the task
+  - Priority of the task
+  - Task handle
+  - Core  
+  *********************/
+  // สร้าง Task1 โดยใช้ฟังก์ชัน func1_Task() Display Data on LCD2004
+  xTaskCreatePinnedToCore(func1_Task, "Task1", 10000, NULL, 1, &Task1, 1);
+  // สร้าง Task2 โดยใช้ฟังก์ชัน func2_Task() DHT11,DHT22 to Blynk 2.0
+  xTaskCreatePinnedToCore(func2_Task, "Task2", 10000, NULL, 2, &Task2, 1);
+  // สร้าง Task3 โดยใช้ฟังก์ชัน func3_Task() Soilmoisture to Blynk 2.0
+  xTaskCreatePinnedToCore(func3_Task, "Task3", 10000, NULL, 3, &Task3, 1);
+  // สร้าง Task4 โดยใช้ฟังก์ชัน func4_Task() MQ4-Methane to Blynk 2.0
+  xTaskCreatePinnedToCore(func4_Task, "Task4", 10000, NULL, 4, &Task4, 1);
+  // สร้าง Task5 โดยใช้ฟังก์ชัน func5_Task() Sensor data (DHT11/DHT22, SoilMoisture, MQ4) to Google Sheet
+  xTaskCreatePinnedToCore(func5_Task, "Task5", 10000, NULL, 5, &Task5, 1);
+}
+//=================Setup Function===============//
+
 //========Check Blynk connected Status==========//
-void checkBlynkStatus() {  // called every 10 seconds by SimpleTimer
+void checkBlynkStatus() {
   bool isconnected = Blynk.connected();
   if (isconnected == false) {
     Serial.println("Blynk Not Connected");
     digitalWrite(ledblynk, LOW);
+    digitalWrite(relay1, LOW);
+    digitalWrite(relay2, LOW);
+    digitalWrite(relay3, LOW);
+    digitalWrite(relay4, LOW);
   }
   if (isconnected == true) {
-    if (!fetch_blynk_state) {
+    if (fetch_blynk_state) {
       digitalWrite(ledblynk, HIGH);
     }
   }
@@ -167,63 +176,6 @@ BLYNK_CONNECTED() {
 }
 //===============Blynk Connected================//
 /*
-//=============DHT11/DHT22 Sensor===============//
-void dhtsensor() {
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();      // Read temperature as Celsius (the default)
-  float f = dht.readTemperature(true);  // Read temperature as Fahrenheit (isFahrenheit = true)
-  // Check if any reads failed and exit early (to try again).
-  if (isnan(h) || isnan(t) || isnan(f)) {
-    Serial.println(F("Failed to read from DHT sensor!"));
-    return;
-  }
-
-  float hif = dht.computeHeatIndex(f, h);         // Compute heat index in Fahrenheit (the default)
-  float hic = dht.computeHeatIndex(t, h, false);  // Compute heat index in Celsius (isFahreheit = false)
-  Serial.print(F("Humidity: "));
-  Serial.print(h);
-  Serial.print(F("%  Temperature: "));
-  Serial.print(t);
-  Serial.print(F("°C "));
-  Serial.print(f);
-  Serial.print(F("°F  Heat index: "));
-  Serial.print(hic);
-  Serial.print(F("°C "));
-  Serial.print(hif);
-  Serial.println(F("°F"));
-
-  Blynk.virtualWrite(V5, t);
-  Blynk.virtualWrite(V6, h);
-}
-//=============DHT11/DHT22 Sensor===============//
-//=============Soilmoisturd Sensor==============//
-void soilmoisture() {
-  float moisture_percentage1;
-  int sensor_analog1;
-  sensor_analog1 = analogRead(INPUT_1);
-  Serial.print("Law Soil data 1:");
-  Serial.println(sensor_analog1);
-  moisture_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
-
-  Serial.print("Moisture Percentage 1= ");
-  Serial.print(moisture_percentage1);
-  Serial.print("%\n\n");
-
-  Blynk.virtualWrite(V7, moisture_percentage1);
-}
-//=============Soilmoisturd Sensor==============//
-
-//=============MQ4-Methane Sensor===============//
-void mq4methane() {
-  int sensor_analog2;
-  sensor_analog2 = analogRead(INPUT_2);
-  Serial.print("Methane gas ADC : ");
-  Serial.println(sensor_analog2);
-  delay(1000);
-  Blynk.virtualWrite(V8, sensor_analog2);
-}
-//=============MQ4-Methane Sensor===============//
-*/
 //=============SendData2GGSheet=================//
 void sendData2GGSheet() {
   float h = dht.readHumidity();
@@ -234,11 +186,11 @@ void sendData2GGSheet() {
   sensor_analog1 = analogRead(INPUT_1);
   moisture_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
 
-  int sensor_analog2;
-  sensor_analog2 = analogRead(INPUT_2);
+  int mq4;
+  mq4 = analogRead(INPUT_2);
 
   HTTPClient http;
-  String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?t=" + t + "&h=" + h + "&moisture_percentage1=" + moisture_percentage1 + "&sensor_analog2=" + sensor_analog2;
+  String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?t=" + t + "&h=" + h + "&moisture_percentage1=" + moisture_percentage1 + "&mq4=" + mq4;
   //Serial.print(url);
   Serial.println("Posting Temperature and humidity data to Google Sheet");
   //---------------------------------------------------------------------
@@ -257,7 +209,7 @@ void sendData2GGSheet() {
   http.end();
 }
 //=============SendData2GGSheet=================//
-
+*/
 //=============funtion ที่ทำงานใน Task1===========//
 void func1_Task(void *pvParam) {
   while (1) {
@@ -266,56 +218,56 @@ void func1_Task(void *pvParam) {
     //Workshop1-DHT11/DHT22
     float h = dht.readHumidity();
     float t = dht.readTemperature();  // or dht.readTemperature(true) for Fahrenheit
-    Serial.print("Temperature:");
-    Serial.println(t);
-    Serial.print("Humidity:");
-    Serial.println(h);
-    delay(1000);
+    //Serial.print("Temperature:");
+    //Serial.println(t);
+    //Serial.print("Humidity:");
+    //Serial.println(h);
+    //delay(1000);
 
     //Workshop4-SoilMoisture Sensor
     float moisture_percentage1;
     int sensor_analog1;
     sensor_analog1 = analogRead(INPUT_1);
-    Serial.print("Law Soil data 1:");
-    Serial.println(sensor_analog1);
+    //Serial.print("Law Soil data 1:");
+    //Serial.println(sensor_analog1);
     moisture_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
-    Serial.print("Moisture Percentage 1= ");
-    Serial.print(moisture_percentage1);
-    Serial.print("%\n\n");
-    delay(1000);
+    //Serial.print("Moisture Percentage 1= ");
+    //Serial.print(moisture_percentage1);
+    //Serial.print("%\n\n");
+    //delay(1000);
 
     //Workshop5-MQ4 Methane Gas
-    int sensor_analog2;
-    sensor_analog2 = analogRead(INPUT_2);
-    Serial.print("Methane gas ADC : ");
-    Serial.println(sensor_analog2);
-    delay(1000);
+    int mq4;
+    mq4 = analogRead(INPUT_2);
+    //Serial.print("Methane gas ADC : ");
+    //Serial.println(mq4);
+    //delay(1000);
 
     //Workshop7-I2C LCD2004
-    lcd.begin();
-    lcd.backlight();
+    //lcd.begin();
+    //lcd.backlight();
     lcd.setCursor(1, 0);
     lcd.print("TEMP =  ");
     lcd.print(t);
-    lcd.setCursor(16,0);
+    lcd.setCursor(16, 0);
     lcd.print("C");
 
     lcd.setCursor(1, 1);
     lcd.print("HUMI =  ");
     lcd.print(h);
-    lcd.setCursor(16,1);
+    lcd.setCursor(16, 1);
     lcd.print("%");
 
     lcd.setCursor(1, 2);
     lcd.print("Soil =  ");
     lcd.print(moisture_percentage1);
-    lcd.setCursor(16,2);
+    lcd.setCursor(16, 2);
     lcd.print("%");
 
     lcd.setCursor(1, 3);
     lcd.print("MQ4  =  ");
-    lcd.print(sensor_analog2);
-    lcd.setCursor(16,3);
+    lcd.print(mq4);
+    lcd.setCursor(16, 3);
     lcd.print("PPM");
     vTaskDelay(xDelay1000ms);  // Delay Task นี้ 1 วินาที
   }
@@ -382,78 +334,65 @@ void func3_Task(void *pvParam) {
 void func4_Task(void *pvParam) {
   while (1) {
     Serial.println(String("Task4: MQ4-Methane to Blynk 2.0"));
-    int sensor_analog2;
-    sensor_analog2 = analogRead(INPUT_2);
+    int mq4;
+    mq4 = analogRead(INPUT_2);
     Serial.print("Methane gas ADC : ");
-    Serial.println(sensor_analog2);
+    Serial.println(mq4);
     delay(1000);
-    Blynk.virtualWrite(V8, sensor_analog2);
+    Blynk.virtualWrite(V8, mq4);
     vTaskDelay(xDelay10000ms);  // Delay Task นี้ 10 วินาที
+  }
+}
+//============funtion ที่ทำงานใน Task4============//
+
+//============funtion ที่ทำงานใน Task5============//
+void func5_Task(void *pvParam) {
+  while (1) {
+    Serial.println(String("Task5: Sensor Data to Google Sheet"));
+    float h = dht.readHumidity();
+    float t = dht.readTemperature();  // or dht.readTemperature(true) for Fahrenheit
+
+    float moisture_percentage1;
+    int sensor_analog1;
+    sensor_analog1 = analogRead(INPUT_1);
+    moisture_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
+
+    int mq4;
+    mq4 = analogRead(INPUT_2);
+
+    HTTPClient http;
+    String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?t=" + t + "&h=" + h + "&moisture_percentage1=" + moisture_percentage1 + "&mq4=" + mq4;
+    //Serial.print(url);
+    Serial.println("Posting Temperature and humidity data to Google Sheet");
+    //---------------------------------------------------------------------
+    //starts posting data to google sheet
+    http.begin(url.c_str());
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+    int httpCode = http.GET();
+    Serial.print("HTTP Status Code: ");
+    Serial.println(httpCode);
+    //getting response from google sheet
+    String payload;
+    if (httpCode > 0) {
+      payload = http.getString();
+      Serial.println("Payload: " + payload);
+    }
+    http.end();
+
+    vTaskDelay(xDelay60000ms);  // Delay Task นี้ 1 นาที
   }
 }
 //============funtion ที่ทำงานใน Task4============//
 
 //================Loop Function=================//
 void loop() {
-  /*
-  //Workshop1-DHT11/DHT22
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();  // or dht.readTemperature(true) for Fahrenheit
-  Serial.print("Temperature:");
-  Serial.println(t);
-  Serial.print("Humidity:");
-  Serial.println(h);
-  delay(1000);
-
-  //Workshop4-SoilMoisture Sensor
-  float moisture_percentage1;
-  int sensor_analog1;
-  sensor_analog1 = analogRead(INPUT_1);
-  Serial.print("Law Soil data 1:");
-  Serial.println(sensor_analog1);
-  moisture_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
-  Serial.print("Moisture Percentage 1= ");
-  Serial.print(moisture_percentage1);
-  Serial.print("%\n\n");
-  delay(1000);
-
-  //Workshop5-MQ4 Methane Gas
-  int sensor_analog2;
-  sensor_analog2 = analogRead(INPUT_2);
-  Serial.print("Methane gas ADC : ");
-  Serial.println(sensor_analog2);
-  delay(1000);
-
-  //Workshop7-I2C LCD2004
-  lcd.begin();
-  lcd.backlight();
-  lcd.setCursor(1, 0);
-  lcd.print("TEMP =  ");
-  lcd.print(t);
-  lcd.print("  C ");
-
-  lcd.setCursor(1, 1);
-  lcd.print("HUMI =  ");
-  lcd.print(h);
-  lcd.print("  % ");
-
-  lcd.setCursor(1, 2);
-  lcd.print("Soil =  ");
-  lcd.print(moisture_percentage1);
-  lcd.print("  % ");
-
-  lcd.setCursor(1, 3);
-  lcd.print("MQ4 =  ");
-  lcd.print(sensor_analog2);
-  lcd.print("  ppm ");
-*/
   Blynk.run();
   timer.run();
 
   //Check Wi-Fi
   unsigned long currentMillis = millis();
   // if WiFi is down, try reconnecting every CHECK_WIFI_TIME seconds
-  if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >=interval)) {
+  if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >= interval)) {
     Serial.print(millis());
     Serial.println("Reconnecting to WiFi...");
     WiFi.disconnect();
