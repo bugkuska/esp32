@@ -16,9 +16,9 @@ V7 SoilMoisture Sensor
 V8 MQ4-Methane Gas Sensor
  *************************************************************************************************/
 /* Fill-in your Template ID (only if using Blynk.Cloud) */
-#define BLYNK_TEMPLATE_ID ""
-#define BLYNK_TEMPLATE_NAME ""
-#define BLYNK_AUTH_TOKEN ""
+#define BLYNK_TEMPLATE_ID "TMPL6LLU6yAKW"
+#define BLYNK_TEMPLATE_NAME "DSD5ESP32x"
+#define BLYNK_AUTH_TOKEN "JD5wLWqZ6eTqherhZMV_ovGg2ie8rnWj"
 #define BLYNK_FIRMWARE_VERSION "0.1.0"
 bool fetch_blynk_state = true;  //true or false
 //#define BLYNK_PRINT Serial
@@ -53,8 +53,8 @@ DHT dht(DHTPIN, DHTTYPE);
 #include <LiquidCrystal_I2C.h>  //https://github.com/bugkuska/esp32/raw/main/basic/lcd/LiquidCrystal_i2c.zip
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 //========Workshop8-Connect to Wi-Fi===========//
-char ssid[] = "";      //ชื่อ Wi-Fi รองรับคลื่น 2.4GHz เท่านั้น
-char pass[] = "";  //รหัสเชื่อมต่อ Wi-Fi
+char ssid[] = "smf001";      //ชื่อ Wi-Fi รองรับคลื่น 2.4GHz เท่านั้น
+char pass[] = "0814111142";  //รหัสเชื่อมต่อ Wi-Fi
 unsigned long previousMillis = 0;
 unsigned long interval = 30000;
 //==============Senddata2GGSheet===============//
@@ -62,8 +62,25 @@ unsigned long interval = 30000;
 #include <HTTPClient.h>
 const char *host = "script.google.com";
 const char *httpsPort = "443";
-String GAS_ID = "";  //Google Script id from deploy app
+String GAS_ID = "AKfycbyLajsDkM_fN8J10db2Sh_oY_qwqoPqAPX4mr_o65XHm0ongnRNtiZUEGXhXbyp5L5C";  //Google Script id from deploy app
 //==============================================//
+
+//==============Wi-Fi Connection================//
+void initWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, pass);
+  Serial.print("Connecting to WiFi ..");
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.print('.');
+    delay(2000);
+  }
+  Serial.println("\nConnected to the WiFi network");
+  delay(2000);
+  Serial.print("Local ESP32 IP: ");
+  Serial.println(WiFi.localIP());
+}
+//==============Wi-Fi Connection================//
+
 //=================Setup Function===============//
 void setup() {
   Serial.begin(9600);
@@ -90,34 +107,25 @@ void setup() {
   Serial.print("RSSI: ");
   Serial.println(WiFi.RSSI());
 
+  Blynk.config(auth);
+  //Blynk.begin(BLYNK_AUTH_TOKEN, "ssid", "pass");
+
   timer.setInterval(10000L, checkBlynkStatus);  // check if Blynk server is connected every 10 seconds
-  timer.setInterval(5000L, dhtsensor);          //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
-  timer.setInterval(5000L, soilmoisture);       //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
-  timer.setInterval(5000L, mq4methane);         //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
+  //timer.setInterval(5000L, dhtsensor);          //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
+  //timer.setInterval(5000L, soilmoisture);       //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
+  //timer.setInterval(5000L, mq4methane);         //อ่านค่าเซ็นเซอร์ทุกๆ 5 วินาที
   timer.setInterval(10000L, sendData2GGSheet);  //อ่านค่าเซ็นเซอร์ทุกๆ 10 วินาที
 
-  Blynk.config(auth);
-  delay(1000);
-  if (!fetch_blynk_state) {
-  }
+  //delay(1000);
+  /*if (!fetch_blynk_state) {
+    digitalWrite(relay1, LOW);
+    digitalWrite(relay2, LOW);
+    digitalWrite(relay3, LOW);
+    digitalWrite(relay4, LOW);
+    Blynk.syncAll();
+  }*/
 }
 //=================Setup Function===============//
-
-//==============Wi-Fi Connection================//
-void initWiFi() {
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, pass);
-  Serial.print("Connecting to WiFi ..");
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.print('.');
-    delay(1000);
-  }
-  Serial.println("\nConnected to the WiFi network");
-  delay(2000);
-  Serial.print("Local ESP32 IP: ");
-  Serial.println(WiFi.localIP());
-}
-//==============Wi-Fi Connection================//
 
 //========Check Blynk connected Status==========//
 void checkBlynkStatus() {  // called every 10 seconds by SimpleTimer
@@ -125,9 +133,13 @@ void checkBlynkStatus() {  // called every 10 seconds by SimpleTimer
   if (isconnected == false) {
     Serial.println("Blynk Not Connected");
     digitalWrite(ledblynk, LOW);
+    digitalWrite(relay1, LOW);
+    digitalWrite(relay2, LOW);
+    digitalWrite(relay3, LOW);
+    digitalWrite(relay4, LOW);
   }
   if (isconnected == true) {
-    if (!fetch_blynk_state) {
+    if (fetch_blynk_state) {
       digitalWrite(ledblynk, HIGH);
     }
   }
@@ -193,12 +205,12 @@ void soilmoisture() {
 
 //=============MQ4-Methane Sensor===============//
 void mq4methane() {
-  int sensor_analog2;
-  sensor_analog2 = analogRead(INPUT_2);
+  int mq4;
+  mq4 = analogRead(INPUT_2);
   Serial.print("Methane gas ADC : ");
-  Serial.println(sensor_analog2);
+  Serial.println(mq4);
   delay(1000);
-  Blynk.virtualWrite(V8, sensor_analog2);
+  Blynk.virtualWrite(V8, mq4);
 }
 //=============MQ4-Methane Sensor===============//
 
@@ -212,11 +224,11 @@ void sendData2GGSheet() {
   sensor_analog1 = analogRead(INPUT_1);
   moisture_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
 
-  int sensor_analog2;
-  sensor_analog2 = analogRead(INPUT_2);
+  int mq4;
+  mq4 = analogRead(INPUT_2);
 
   HTTPClient http;
-  String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?t=" + t + "&h=" + h + "&moisture_percentage1=" + moisture_percentage1 + "&sensor_analog2=" + sensor_analog2;
+  String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?t=" + t + "&h=" + h + "&moisture_percentage1=" + moisture_percentage1 + "&mq4=" + mq4;
   //Serial.print(url);
   Serial.println("Posting Temperature and humidity data to Google Sheet");
   //---------------------------------------------------------------------
@@ -238,64 +250,64 @@ void sendData2GGSheet() {
 
 //================Loop Function=================//
 void loop() {
+  Blynk.run();
+  timer.run();
+
   //Workshop1-DHT11/DHT22
   float h = dht.readHumidity();
   float t = dht.readTemperature();  // or dht.readTemperature(true) for Fahrenheit
-  Serial.print("Temperature:");
+  /*Serial.print("Temperature:");
   Serial.println(t);
   Serial.print("Humidity:");
   Serial.println(h);
-  delay(1000);
+  delay(1000);*/
 
   //Workshop4-SoilMoisture Sensor
   float moisture_percentage1;
   int sensor_analog1;
   sensor_analog1 = analogRead(INPUT_1);
-  Serial.print("Law Soil data 1:");
-  Serial.println(sensor_analog1);
+  //Serial.print("Law Soil data 1:");
+  //Serial.println(sensor_analog1);
   moisture_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
-  Serial.print("Moisture Percentage 1= ");
-  Serial.print(moisture_percentage1);
-  Serial.print("%\n\n");
-  delay(1000);
+  //Serial.print("Moisture Percentage 1= ");
+  //Serial.print(moisture_percentage1);
+  //Serial.print("%\n\n");
+  //delay(1000);
 
   //Workshop5-MQ4 Methane Gas
-  int sensor_analog2;
-  sensor_analog2 = analogRead(INPUT_2);
-  Serial.print("Methane gas ADC : ");
-  Serial.println(sensor_analog2);
-  delay(1000);
+  int mq4;
+  mq4 = analogRead(INPUT_2);
+  //Serial.print("Methane gas ADC : ");
+  //Serial.println(mq4);
+  // delay(1000);
 
- 
-    //Workshop7-I2C LCD2004
-    lcd.begin();
-    lcd.backlight();
-    lcd.setCursor(1, 0);
-    lcd.print("TEMP =  ");
-    lcd.print(t);
-    lcd.setCursor(16,0);
-    lcd.print("C");
 
-    lcd.setCursor(1, 1);
-    lcd.print("HUMI =  ");
-    lcd.print(h);
-    lcd.setCursor(16,1);
-    lcd.print("%");
+  //Workshop7-I2C LCD2004
+  lcd.begin();
+  lcd.backlight();
+  lcd.setCursor(1, 0);
+  lcd.print("TEMP =  ");
+  lcd.print(t);
+  lcd.setCursor(16, 0);
+  lcd.print("C");
 
-    lcd.setCursor(1, 2);
-    lcd.print("Soil =  ");
-    lcd.print(moisture_percentage1);
-    lcd.setCursor(16,2);
-    lcd.print("%");
+  lcd.setCursor(1, 1);
+  lcd.print("HUMI =  ");
+  lcd.print(h);
+  lcd.setCursor(16, 1);
+  lcd.print("%");
 
-    lcd.setCursor(1, 3);
-    lcd.print("MQ4  =  ");
-    lcd.print(sensor_analog2);
-    lcd.setCursor(16,3);
-    lcd.print("PPM");
+  lcd.setCursor(1, 2);
+  lcd.print("Soil =  ");
+  lcd.print(moisture_percentage1);
+  lcd.setCursor(16, 2);
+  lcd.print("%");
 
-  Blynk.run();
-  timer.run();
+  lcd.setCursor(1, 3);
+  lcd.print("MQ4  =  ");
+  lcd.print(mq4);
+  lcd.setCursor(16, 3);
+  lcd.print("PPM");
 
   //Check Wi-Fi
   unsigned long currentMillis = millis();
