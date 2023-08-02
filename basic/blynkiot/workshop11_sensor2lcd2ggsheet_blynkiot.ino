@@ -16,9 +16,9 @@ V7 SoilMoisture Sensor
 V8 MQ4-Methane Gas Sensor
  *************************************************************************************************/
 /* Fill-in your Template ID (only if using Blynk.Cloud) */
-#define BLYNK_TEMPLATE_ID "TMPL6LLU6yAKW"
-#define BLYNK_TEMPLATE_NAME "DSD5ESP32x"
-#define BLYNK_AUTH_TOKEN "JD5wLWqZ6eTqherhZMV_ovGg2ie8rnWj"
+#define BLYNK_TEMPLATE_ID ""
+#define BLYNK_TEMPLATE_NAME ""
+#define BLYNK_AUTH_TOKEN ""
 #define BLYNK_FIRMWARE_VERSION "0.1.0"
 bool fetch_blynk_state = true;  //true or false
 //#define BLYNK_PRINT Serial
@@ -53,8 +53,8 @@ DHT dht(DHTPIN, DHTTYPE);
 #include <LiquidCrystal_I2C.h>  //https://github.com/bugkuska/esp32/raw/main/basic/lcd/LiquidCrystal_i2c.zip
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 //========Workshop8-Connect to Wi-Fi===========//
-char ssid[] = "smf001";      //ชื่อ Wi-Fi รองรับคลื่น 2.4GHz เท่านั้น
-char pass[] = "0814111142";  //รหัสเชื่อมต่อ Wi-Fi
+char ssid[] = "";      //ชื่อ Wi-Fi รองรับคลื่น 2.4GHz เท่านั้น
+char pass[] = "";  //รหัสเชื่อมต่อ Wi-Fi
 unsigned long previousMillis = 0;
 unsigned long interval = 30000;
 //==============Senddata2GGSheet===============//
@@ -62,7 +62,7 @@ unsigned long interval = 30000;
 #include <HTTPClient.h>
 const char *host = "script.google.com";
 const char *httpsPort = "443";
-String GAS_ID = "AKfycbyLajsDkM_fN8J10db2Sh_oY_qwqoPqAPX4mr_o65XHm0ongnRNtiZUEGXhXbyp5L5C";  //Google Script id from deploy app
+String GAS_ID = "";  //Google Script id from deploy app
 //==============================================//
 
 //==============Wi-Fi Connection================//
