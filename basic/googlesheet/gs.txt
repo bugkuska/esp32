@@ -33,7 +33,7 @@ function doGet(e) {
           result = 'Soil Written on column E'; 
           break;
 
-      case 'sensor_analog2':
+      case 'mq4':
           rowData[5] = value; //MQ4 in column F
           result = 'MQ4 Written on column F'; 
           break;
