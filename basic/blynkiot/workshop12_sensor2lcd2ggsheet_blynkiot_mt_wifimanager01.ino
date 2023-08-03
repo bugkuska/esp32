@@ -69,15 +69,13 @@ void saveConfigCallback() {
 SimpleTimer timer;
 //================SimpleTimer================//
 // สร้างตัวแปรเก็บค่า Tick ที่แปลงจากเวลาที่เป็น millisecond
-const TickType_t xDelay3000ms = pdMS_TO_TICKS(3000);    //Display Sensor data (DHT11/DHT22, SoilMoisture, MQ4) on LCD2004
+const TickType_t xDelay1000ms = pdMS_TO_TICKS(1000);    //Display Sensor data (DHT11/DHT22, SoilMoisture, MQ4) on LCD2004
 const TickType_t xDelay10000ms = pdMS_TO_TICKS(10000);  //Sensor data (DHT11/DHT22, SoilMoisture, MQ4) to blynk
-const TickType_t xDelay60000ms = pdMS_TO_TICKS(60000);  //Sensor data (DHT11/DHT22, SoilMoisture, MQ4) to Google Sheet
 // สร้างตัวแปร TaskHandle สำหรับแต่ละ Task
 TaskHandle_t Task1 = NULL;  //Display Data on LCD2004
 TaskHandle_t Task2 = NULL;  //DHT11,DHT22 to Blynk 2.0
 TaskHandle_t Task3 = NULL;  //Soilmoisture to Blynk 2.0
 TaskHandle_t Task4 = NULL;  //MQ4-Methane to Blynk 2.0
-TaskHandle_t Task5 = NULL;  //Sensor data (DHT11/DHT22, SoilMoisture, MQ4) to Google Sheet
 //=========Define IO connect to relay========//
 #define relay1 25   //Relay channel1
 #define relay2 33   //Relay channel2
@@ -171,7 +169,6 @@ void initWiFiManager() {
     Serial.print(String(i) + " ");  //แสดงข้อความใน Serial Monitor
   }
 
-
   if (digitalRead(AP_Config) == LOW) {
     Serial.println("Button Pressed");                     //แสดงข้อความใน Serial Monitor
     wifiManager.resetSettings();                          //ให้ล้างค่า SSID และ Password ที่เคยบันทึกไว้
@@ -260,8 +257,8 @@ void setup() {
   Blynk.config(auth);
   delay(1000);
   //Set timer interval for read function
-  timer.setInterval(30000L, checkBlynkStatus);  // เช็คการเชื่อมต่อไปที่ Blynk server ทุกๆ 30 วินาที
-  //timer.setInterval(60000L, sendData2GGSheet);  //ส่งค่าไปยัง Google Sheet ทุกๆ 1 นาที
+  timer.setInterval(10000, checkBlynkStatus);  // เช็คการเชื่อมต่อไปที่ Blynk server ทุกๆ 30 วินาที
+  timer.setInterval(60000L, sendData2GGSheet);  //ส่งค่าไปยัง Google Sheet ทุกๆ 1 นาที
 
   /*********************
   - Task function
@@ -280,8 +277,6 @@ void setup() {
   xTaskCreatePinnedToCore(func3_Task, "Task3", 10000, NULL, 3, &Task3, 1);
   // สร้าง Task4 โดยใช้ฟังก์ชัน func4_Task() MQ4-Methane to Blynk 2.0
   xTaskCreatePinnedToCore(func4_Task, "Task4", 10000, NULL, 4, &Task4, 1);
-  // สร้าง Task5 โดยใช้ฟังก์ชัน func5_Task() Sensor data (DHT11/DHT22, SoilMoisture, MQ4) to Google Sheet
-  xTaskCreatePinnedToCore(func5_Task, "Task5", 10000, NULL, 5, &Task5, 1);
 }
 //=================Setup Function===============//
 //========Check Blynk connected Status==========//
@@ -311,7 +306,7 @@ BLYNK_CONNECTED() {
   }
 }
 //===============Blynk Connected================//
-/*
+
 //=============SendData2GGSheet=================//
 void sendData2GGSheet() {
   float h = dht.readHumidity();
@@ -345,7 +340,7 @@ void sendData2GGSheet() {
   http.end();
 }
 //=============SendData2GGSheet=================//
-*/
+
 //=============funtion ที่ทำงานใน Task1===========//
 void func1_Task(void *pvParam) {
   while (1) {
@@ -405,7 +400,7 @@ void func1_Task(void *pvParam) {
     lcd.print(mq4);
     lcd.setCursor(16, 3);
     lcd.print("PPM");
-    vTaskDelay(xDelay3000ms);  // Delay Task นี้ 3 วินาที
+    vTaskDelay(xDelay1000ms);  // Delay Task นี้ 3 วินาที
   }
 }
 //=============funtion ที่ทำงานใน Task1===========//
@@ -471,44 +466,6 @@ void func4_Task(void *pvParam) {
     delay(1000);
     Blynk.virtualWrite(V8, mq4);
     vTaskDelay(xDelay10000ms);  // Delay Task นี้ 10 วินาที
-  }
-}
-//============funtion ที่ทำงานใน Task4============//
-//============funtion ที่ทำงานใน Task5============//
-void func5_Task(void *pvParam) {
-  while (1) {
-    Serial.println(String("Task5: Sensor Data to Google Sheet"));
-    float h = dht.readHumidity();
-    float t = dht.readTemperature();  // or dht.readTemperature(true) for Fahrenheit
-
-    float moisture_percentage1;
-    int sensor_analog1;
-    sensor_analog1 = analogRead(INPUT_1);
-    moisture_percentage1 = (100 - ((sensor_analog1 / 4095.00) * 100));
-
-    int mq4;
-    mq4 = analogRead(INPUT_2);
-
-    HTTPClient http;
-    String url = "https://script.google.com/macros/s/" + GAS_ID + "/exec?t=" + t + "&h=" + h + "&moisture_percentage1=" + moisture_percentage1 + "&mq4=" + mq4;
-    //Serial.print(url);
-    Serial.println("Posting Temperature and humidity data to Google Sheet");
-    //---------------------------------------------------------------------
-    //starts posting data to google sheet
-    http.begin(url.c_str());
-    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-    int httpCode = http.GET();
-    Serial.print("HTTP Status Code: ");
-    Serial.println(httpCode);
-    //getting response from google sheet
-    String payload;
-    if (httpCode > 0) {
-      payload = http.getString();
-      Serial.println("Payload: " + payload);
-    }
-    http.end();
-
-    vTaskDelay(xDelay60000ms);  // Delay Task นี้ 1 นาที
   }
 }
 //============funtion ที่ทำงานใน Task4============//
