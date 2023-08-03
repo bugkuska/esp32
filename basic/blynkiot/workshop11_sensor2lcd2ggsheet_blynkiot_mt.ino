@@ -16,9 +16,9 @@ V7 SoilMoisture Sensor
 V8 MQ4-Methane Gas Sensor
  *************************************************************************************************/
 /* Fill-in your Template ID (only if using Blynk.Cloud) */
-#define BLYNK_TEMPLATE_ID ""                         //Template ID from Blynk.console
-#define BLYNK_TEMPLATE_NAME ""                       //Template Name from Blynk.console
-#define BLYNK_AUTH_TOKEN ""                          //Auth token from Blynk.console
+#define BLYNK_TEMPLATE_ID ""                    //Template ID from Blynk.console
+#define BLYNK_TEMPLATE_NAME ""                      //Template Name from Blynk.console
+#define BLYNK_AUTH_TOKEN ""  //Auth token from Blynk.console
 #define BLYNK_FIRMWARE_VERSION "0.1.0"
 bool fetch_blynk_state = true;  //true or false
 #define BLYNK_PRINT Serial
