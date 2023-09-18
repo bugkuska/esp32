@@ -19,10 +19,10 @@ ESP8266WiFiMulti wifiMulti;
 //===========Influxdb============//
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
-#define INFLUXDB_URL "http://192.168.1.254:8086"
-#define INFLUXDB_TOKEN "S4yK5cCTDxsCj9iyJt8He6BPukKtmvT0tc4qhszWijRwt-bXB4dSnqg3rQDfz5mDdzoi22QbmVpsvrJUy7yqMg=="
-#define INFLUXDB_ORG "30af41e2ba56dce7"
-#define INFLUXDB_BUCKET "esp32_dht11"
+#define INFLUXDB_URL ""
+#define INFLUXDB_TOKEN ""
+#define INFLUXDB_ORG ""
+#define INFLUXDB_BUCKET ""
 // Declare InfluxDB client instance with preconfigured InfluxCloud certificate
 InfluxDBClient client(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
 // Declare Data point
@@ -30,9 +30,9 @@ Point sensor("dht11");
 //===========Influxdb============//
 //========Wi-Fi Credentials======//
 //WiFi AP SSID
-#define WIFI_SSID "smf001"
+#define WIFI_SSID ""
 // WiFi password
-#define WIFI_PASSWORD "0814111142"
+#define WIFI_PASSWORD ""
 //========Wi-Fi Credentials======//
 //=========Time zone info========//
 #define TZ_INFO "UTC7"
@@ -58,7 +58,7 @@ SimpleTimer timer;
 #include <HTTPClient.h>
 const char *host = "script.google.com";
 const char *httpsPort = "443";
-String GAS_ID = "AKfycbxGa-u7N-gmqSui3KFBb5dS0OgmL11hvXHQCYhhVgXRqxD596DhfRUiRSo8q7zYHCGj";  //Google Script id from deploy app
+String GAS_ID = "";  //Google Script id from deploy app
 //===========GGSheet=============//
 //=========Setup Function========//
 void setup() {
