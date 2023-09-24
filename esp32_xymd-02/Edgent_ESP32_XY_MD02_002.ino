@@ -21,8 +21,8 @@
 
 /* Fill in information from your Blynk Template here */
 /* Read more: https://bit.ly/BlynkInject */
-#define BLYNK_TEMPLATE_ID "TMPL64Xzr8-fl"
-#define BLYNK_TEMPLATE_NAME "esp32xy02"
+#define BLYNK_TEMPLATE_ID "" //แก้ไข Template ID
+#define BLYNK_TEMPLATE_NAME "" //แก้ไข Template Name
 
 #define BLYNK_FIRMWARE_VERSION "0.2.0"
 
@@ -47,8 +47,10 @@ SimpleTimer timer;
 //=============Simple Timer=============//
 //============Modbus Master=============//
 #include <ModbusMaster.h>
-#define RX2 16  //RO,RX
-#define TX2 17  //DI,TX
+//#define RX2 16  //RO,RX
+//#define TX2 17  //DI,TX
+#define RX2 26  //RO,RX
+#define TX2 27  //DI,TX
 //============Modbus Master=============//
 //=============Modbus Object============//
 ModbusMaster node1;  //XY-MD02 Slave ID1
