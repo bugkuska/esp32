@@ -14,8 +14,8 @@ V5 DHT11/DHT22 Temperature
 V6 DHT11/DHT22 Humidity
  *************************************************************************************************/
 //==========Blynk 2.0============//
-#define BLYNK_TEMPLATE_ID "TMPL65BMieuNc"
-#define BLYNK_DEVICE_NAME "esp32"
+#define BLYNK_TEMPLATE_ID ""
+#define BLYNK_DEVICE_NAME ""
 #define BLYNK_FIRMWARE_VERSION "0.1.0"
 #define BLYNK_PRINT Serial
 #define BLYNK_DEBUG
