@@ -1,135 +1,100 @@
 /******************** Libraries ********************/
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <WiFiManager.h>          // tzapu/WiFiManager
-#include <Preferences.h>          // เก็บ Blynk token
-#include <BlynkSimpleEsp32.h>     // Blynk Legacy 0.6.x
-#include <ModbusMaster.h>
+#include <WiFi.h>               // ไลบรารี WiFi สำหรับใช้งานการเชื่อมต่อเครือข่ายบน ESP32
+#include <WiFiClient.h>         // ไลบรารีสำหรับสร้าง client เชื่อมต่อ TCP/IP (เช่น HTTP, MQTT)
+#include <BlynkSimpleEsp32.h>   // ไลบรารีสำหรับเชื่อมต่อ Blynk Legacy เวอร์ชัน 0.6.0 บน ESP32
+#include <ModbusMaster.h>       // ไลบรารีสำหรับใช้งานโปรโตคอล Modbus RTU แบบ Master (อ่านค่า Slave)
+#include <WiFiManager.h>        // ใช้ตั้งค่า SSID/PASS ผ่านพอร์ทัล
 
 /******************** RS485 / Modbus ********************/
-#define RX2_PIN 16
-#define TX2_PIN 17
+#define RX2_PIN 16              // กำหนดขา RX ของ Serial2 (รับข้อมูลจากโมดูล RS485 → ESP32 GPIO16)
+#define TX2_PIN 17              // กำหนดขา TX ของ Serial2 (ส่งข้อมูลจาก ESP32 → โมดูล RS485 GPIO17)
 
 // ปรับตามอุปกรณ์จริง
-static const uint8_t  SLAVE_ID = 1;     // แก้เป็น ID ของมิเตอร์/เซ็นเซอร์คุณ
-static const uint16_t REG_ADDR = 0x0000;// แก้เป็นรีจิสเตอร์ที่เก็บความเร็วลม
-static const uint16_t REG_COUNT = 1;    // ค่าความเร็วลม 1 รีจิสเตอร์ (U16)
-static const uint32_t MODBUS_BAUD = 9600;
-static const float    SCALE = 0.1f;     // ตัวคูณแปลงหน่วย (เช่น raw=25 -> 2.5 m/s)
+static const uint8_t  SLAVE_ID   = 1;       // กำหนดหมายเลข Slave ID ของเซ็นเซอร์ (ดูจากคู่มืออุปกรณ์)
+static const uint16_t REG_ADDR   = 0x0000;  // ที่อยู่ (Address) ของรีจิสเตอร์ที่เก็บค่าความเร็วลม
+static const uint16_t REG_COUNT  = 1;       // จำนวนรีจิสเตอร์ที่ต้องการอ่าน (1 รีจิสเตอร์ ขนาด 16 บิต)
+static const uint32_t MODBUS_BAUD= 9600;    // Baudrate ที่ใช้สื่อสาร Modbus (ต้องตรงกับอุปกรณ์ เช่น 4800, 9600, 19200)
+static const float    SCALE      = 0.1f;    // ตัวคูณสเกลของค่าที่อ่านมา (raw * 0.1 = ค่าความเร็วลมจริง หน่วย m/s)
+static const bool     USE_INPUT_REGS = false; // เลือกชนิดรีจิสเตอร์: true = Input Register, false = Holding Register
 
-// หากอุปกรณ์ต้องสลับ DE/RE ก่อน/หลังคุย ให้ใช้ callback
-void preTransmission();
-void postTransmission();
+ModbusMaster node;                          // สร้างออบเจกต์ node ของ ModbusMaster เพื่อใช้ติดต่อกับอุปกรณ์ Slave
 
-ModbusMaster node;
+/******************** Blynk (Token อยู่ในโค้ด) ********************/
+#define BLYNK_AUTH  "VAU0QxgykEBSp5PtQC52F3WikR86e2uc"   // ใส่ Auth Token ตายตัวในโค้ด
+const char*   BLYNK_SERVER = "159.65.5.221";              // IP ของ Blynk Server (private server)
+const uint16_t BLYNK_PORT  = 8080;                        // พอร์ตของ Blynk Server
 
-/******************** Blynk Legacy Server ********************/
-const char* BLYNK_SERVER = "159.65.5.221";
-const uint16_t BLYNK_PORT = 8080;
+BlynkTimer timer;                            // สร้างออบเจกต์ timer ของ Blynk สำหรับตั้งเวลาทำงาน (เช่น อ่านค่าและส่งขึ้น Blynk ทุก 2 วินาที)
 
-// จะโหลด/บันทึกใน NVS
-Preferences prefs;
-String blynkToken = "";
+/******************** Utils ********************/
+int readRegister(uint16_t reg) {                   // ฟังก์ชันอ่านค่ารีจิสเตอร์ Modbus ที่ระบุ (reg = address)
+  uint8_t result;                                  // เก็บรหัสผลลัพธ์จากการอ่าน (success หรือ error code)
 
-/******************** WiFiManager custom param ********************/
-WiFiManager wm;
-WiFiManagerParameter param_blynk_token("blynk", "Blynk Auth Token", "", 40);
+  if (USE_INPUT_REGS)                              // ถ้าเลือกให้ใช้ Input Register
+    result = node.readInputRegisters(reg, REG_COUNT);   // อ่านจาก Input Registers (0x04)
+  else
+    result = node.readHoldingRegisters(reg, REG_COUNT); // อ่านจาก Holding Registers (0x03)
 
-/******************** Timers ********************/
-BlynkTimer timer;
-
-/******************** Helpers ********************/
-void saveTokenToNVS(const String& token) {
-  prefs.begin("blynk", false);
-  prefs.putString("token", token);
-  prefs.end();
-}
-String readTokenFromNVS() {
-  prefs.begin("blynk", true);
-  String t = prefs.getString("token", "");
-  prefs.end();
-  return t;
+  if (result == node.ku8MBSuccess) {               // ถ้าอ่านสำเร็จ
+    return node.getResponseBuffer(0);              // คืนค่าดิบ (raw) 16-bit จาก buffer ตำแหน่ง 0
+  } else {                                         // ถ้าอ่านไม่สำเร็จ
+    Serial.print("[ERR] Modbus code=0x");          // แสดงข้อความ Error Code
+    Serial.println(result, HEX);                   // แสดงรหัส error ในรูปแบบ HEX
+    return -1;                                     // คืนค่า -1 เพื่อบอกว่าอ่านไม่สำเร็จ
+  }
 }
 
-/******************** Read & Send ********************/
-void readAndSendWind() {
-  // อ่าน Modbus
-  uint8_t result = node.readHoldingRegisters(REG_ADDR, REG_COUNT);
-  if (result == node.ku8MBSuccess) {
-    uint16_t raw = node.getResponseBuffer(0);
-    float wind = raw * SCALE;   // หน่วยตามที่คุณตั้ง (เช่น m/s)
+void readAndSendWind() {                           // ฟังก์ชันอ่านค่า wind และส่งขึ้น Blynk
+  int raw = readRegister(REG_ADDR);                // อ่านค่า raw จากรีจิสเตอร์ที่กำหนด (REG_ADDR)
 
-    // ส่งขึ้น Blynk: V1
-    Blynk.virtualWrite(V1, wind);
+  if (raw >= 0) {                                  // ถ้าอ่านได้สำเร็จ (ค่ามากกว่าหรือเท่ากับ 0)
+    float wind_ms  = raw * SCALE;                  // แปลงค่าดิบ → m/s โดยคูณด้วย SCALE
+    float wind_kmh = wind_ms * 3.6f;               // แปลงจาก m/s → km/h
 
-    // Debug
-    Serial.print("[OK] Wind raw=");
-    Serial.print(raw);
-    Serial.print("  value=");
-    Serial.println(wind);
+    // ส่งค่าขึ้น Blynk
+    Blynk.virtualWrite(V1, wind_ms);               // V1 = ความเร็วลม หน่วย m/s
+    Blynk.virtualWrite(V2, wind_kmh);              // V2 = ความเร็วลม หน่วย km/h
 
+    // Debug แสดงค่าทาง Serial Monitor
+    Serial.printf("[OK] raw=%d  %.2f m/s | %.2f km/h\n", raw, wind_ms, wind_kmh);
   } else {
-    Serial.print("[ERR] Modbus code=");
-    Serial.println(result);
+    Serial.println("Failed to read windspeed.");   // ถ้าอ่านไม่สำเร็จ แสดงข้อความแจ้งเตือน
   }
 }
 
 /******************** Setup ********************/
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(9600);                            // เริ่ม Serial Monitor
 
-  // Serial2 for RS485
-  Serial2.begin(MODBUS_BAUD, SERIAL_8N1, RX2_PIN, TX2_PIN);
+  // RS485 UART2
+  Serial2.begin(MODBUS_BAUD, SERIAL_8N1, RX2_PIN, TX2_PIN); // เริ่ม Serial2 สำหรับคุยกับโมดูล RS485
 
   // ModbusMaster
-  node.begin(SLAVE_ID, Serial2);
+  node.begin(SLAVE_ID, Serial2);                   // เริ่มต้นการทำงาน ModbusMaster กำหนด Slave ID + Serial2
+  //node.setTimeout(1000);                         // ตั้งค่า timeout = 1000 ms (1 วินาที) ต่อการอ่าน (คงไว้เป็นคอมเมนต์ตามเดิม)
+  node.clearResponseBuffer();                      // ล้าง buffer ที่เก็บ response เดิม
 
-  // ----- WiFiManager -----
-  // โหลด token เดิม ถ้ามี
-  blynkToken = readTokenFromNVS();
-
-  // เพิ่มช่องกรอก Token ลงหน้า config
-  if (blynkToken.length() > 0) {
-    param_blynk_token.setValue(blynkToken.c_str(), blynkToken.length());
-  }
-  wm.addParameter(&param_blynk_token);
-
-  // ชื่อ AP ตอนตั้งค่า
-  wm.setConfigPortalBlocking(true);
-  wm.setMinimumSignalQuality(0);
-  wm.setBreakAfterConfig(true); // ออกจาก loop.startConfigPortal เมื่อกด Save & Reboot
-
-  // ถ้ายังไม่เคยตั้งค่า จะเข้าโหมด AP อัตโนมัติ
-  bool ok = wm.autoConnect("WindSpeed-Setup");
-  if (!ok) {
-    Serial.println("Failed to connect. Rebooting...");
+  // ===== เชื่อม Wi-Fi ด้วย WiFiManager (ตั้งค่า SSID/PASS ผ่านพอร์ทัล) =====
+  WiFiManager wm;                                   // สร้างออบเจกต์ WiFiManager
+  bool ok = wm.autoConnect("Wind-Setup");           // เปิด AP/Potal ครั้งแรก → เลือก Wi-Fi แล้วบันทึก
+  if (!ok) {                                        // ถ้าเชื่อมต่อไม่สำเร็จ
+    Serial.println("WiFiManager failed, rebooting...");
     delay(3000);
     ESP.restart();
   }
 
-  // ดึง token จากหน้า config (ล่าสุด)
-  String newToken = String(param_blynk_token.getValue());
-  newToken.trim();
-  if (newToken.length() > 0 && newToken != blynkToken) {
-    blynkToken = newToken;
-    saveTokenToNVS(blynkToken);
-  }
-
-  // ----- Blynk -----
-  // ใช้ server & port แบบกำหนดเอง
-  Blynk.config(blynkToken.c_str(), BLYNK_SERVER, BLYNK_PORT);
-
-  // ถ้าต้องการรอจนเชื่อมได้ค่อยไปต่อ (optional)
-  if (!Blynk.connect(8000)) { // รอ 8 วินาที
+  // ===== Blynk (ใช้ Token จากโค้ด) =====
+  Blynk.config(BLYNK_AUTH, BLYNK_SERVER, BLYNK_PORT); // ตั้งค่า server/token
+  if (!Blynk.connect(8000)) {                         // เชื่อมต่อ Blynk (timeout 8 วินาที)
     Serial.println("Blynk connect timeout (will keep trying in loop).");
   }
 
   // อ่าน & ส่งทุก 2 วินาที
-  timer.setInterval(2000, readAndSendWind);
+  timer.setInterval(2000, readAndSendWind);        // ตั้ง Timer ให้เรียกฟังก์ชัน readAndSendWind ทุกๆ 2000 ms (2 วินาที)
 }
 
 /******************** Loop ********************/
 void loop() {
-  Blynk.run();
-  timer.run();
+  Blynk.run();                                     // ฟังก์ชันหลักของ Blynk ต้องเรียกตลอดเวลา เพื่อ maintain connection
+  timer.run();                                     // ตรวจสอบและเรียกใช้ task จาก BlynkTimer (เช่น อ่านค่าเป็นรอบ)
 }
